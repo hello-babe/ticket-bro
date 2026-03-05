@@ -50,7 +50,7 @@ export const useAuth = () => {
 
   const register = async (data) => {
     const r = await dispatch(registerUser(data));
-    if (!r.error) navigate(authConfig.routes.dashboard);
+    if (!r.error) navigate(authConfig.routes.profile);
     return r;
   };
 
@@ -58,7 +58,7 @@ export const useAuth = () => {
     const r = await dispatch(loginUser(data));
     if (!r.error) {
       if (r.payload?.requiresTwoFactor) navigate(authConfig.routes.otp);
-      else navigate(authConfig.routes.dashboard);
+      else navigate(authConfig.routes.home);
     }
     return r;
   };
@@ -70,7 +70,7 @@ export const useAuth = () => {
 
   const verify2FA = async (email, otp) => {
     const r = await dispatch(verifyTwoFactor({ email, otp }));
-    if (!r.error) navigate(authConfig.routes.dashboard);
+    if (!r.error) navigate(authConfig.routes.home);
     return r;
   };
 
