@@ -180,11 +180,6 @@ const userSchema = new mongoose.Schema(
   },
 );
 
-// ── Indexes ───────────────────────────────────────────────────────────────────
-userSchema.index({ email: 1 });
-userSchema.index({ googleId: 1 }, { sparse: true });
-userSchema.index({ facebookId: 1 }, { sparse: true });
-userSchema.index({ createdAt: -1 });
 
 // ── Virtuals ──────────────────────────────────────────────────────────────────
 userSchema.virtual('fullName').get(function () {
