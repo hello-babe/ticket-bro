@@ -315,10 +315,6 @@ const AppRoutes = () => {
     <Suspense fallback={<PageLoader />}>
       <Routes>
 
-        {/* ══════════════════════════════════════════════════════════
-            PUBLIC — MainLayout (Navbar + Footer)
-            Accessible to everyone, authenticated or not.
-        ══════════════════════════════════════════════════════════ */}
         <Route element={<MainLayout />}>
 
           {/* Home */}
