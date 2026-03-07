@@ -41,7 +41,7 @@ passport.use(
   ),
 );
 
-// ── Local Strategy (email + password) ────────────────────────────────────────
+// ── Local Strategy ─────────────────────────────────────────────────────────────
 passport.use(
   "local",
   new LocalStrategy(
@@ -53,15 +53,13 @@ passport.use(
     async (req, email, password, done) => {
       try {
         const user = await authRepository.findUserByEmail(email, true);
-        if (!user) {
+        if (!user)
           return done(null, false, { message: "Invalid email or password." });
-        }
-        if (!user.isActive) {
+        if (!user.isActive)
           return done(null, false, { message: "Account deactivated." });
-        }
-        if (user.isLocked) {
+        if (user.isLocked)
           return done(null, false, { message: "Account temporarily locked." });
-        }
+
         const isMatch = await comparePassword(password, user.password);
         if (!isMatch) {
           await user.incrementLoginAttempts();
@@ -77,19 +75,22 @@ passport.use(
 );
 
 // ── Google OAuth Strategy ─────────────────────────────────────────────────────
-if (authConfig.oauth.google.clientID) {
+if (authConfig.oauth.google.clientID && authConfig.oauth.google.clientSecret) {
   passport.use(
     "google",
     new GoogleStrategy(
       {
         clientID: authConfig.oauth.google.clientID,
         clientSecret: authConfig.oauth.google.clientSecret,
-        callbackURL: authConfig.oauth.google.callbackURL,
-        scope: authConfig.oauth.google.scope,
+        callbackURL:
+          authConfig.oauth.google.callbackURL ||
+          "http://localhost:5000/api/v1/auth/oauth/google/callback",
+        scope: authConfig.oauth.google.scope || ["profile", "email"],
+        passReqToCallback: true,
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (req, accessToken, refreshToken, profile, done) => {
         try {
-          // Pass raw profile to controller - service handles creation/linking
+          // Pass profile to controller/service to handle user creation/login
           return done(null, profile);
         } catch (error) {
           logger.error(`Google Strategy error: ${error.message}`);
@@ -98,10 +99,17 @@ if (authConfig.oauth.google.clientID) {
       },
     ),
   );
+} else {
+  logger.warn(
+    "Google OAuth clientID or clientSecret missing. Google OAuth disabled.",
+  );
 }
 
 // ── Facebook OAuth Strategy ───────────────────────────────────────────────────
-if (authConfig.oauth.facebook.clientID) {
+if (
+  authConfig.oauth.facebook.clientID &&
+  authConfig.oauth.facebook.clientSecret
+) {
   passport.use(
     "facebook",
     new FacebookStrategy(
@@ -109,9 +117,14 @@ if (authConfig.oauth.facebook.clientID) {
         clientID: authConfig.oauth.facebook.clientID,
         clientSecret: authConfig.oauth.facebook.clientSecret,
         callbackURL: authConfig.oauth.facebook.callbackURL,
-        profileFields: authConfig.oauth.facebook.profileFields,
+        profileFields: authConfig.oauth.facebook.profileFields || [
+          "id",
+          "displayName",
+          "email",
+        ],
+        passReqToCallback: true,
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (req, accessToken, refreshToken, profile, done) => {
         try {
           return done(null, profile);
         } catch (error) {
@@ -120,6 +133,10 @@ if (authConfig.oauth.facebook.clientID) {
         }
       },
     ),
+  );
+} else {
+  logger.warn(
+    "Facebook OAuth clientID or clientSecret missing. Facebook OAuth disabled.",
   );
 }
 

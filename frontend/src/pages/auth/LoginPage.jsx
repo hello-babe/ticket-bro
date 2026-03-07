@@ -1,11 +1,198 @@
-import React from 'react'
+// frontend/src/pages/auth/LoginPage.jsx
+// Route: /auth/login
+
+import React, { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import AuthLayout from "@/components/layout/AuthLayout";
+import {
+  Field,
+  SubmitBtn,
+  Divider,
+  SocialLogins,
+  AuthHeading,
+  ErrorBanner,
+  UnverifiedBanner,
+  AuthFooter,
+} from "./_authShared";
+import useAuth from "@/context/AuthContext";
+import { ROUTES } from "@/app/AppRoutes";
+
+const schema = z.object({
+  email: z.string().email("Enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+  rememberMe: z.boolean().optional(),
+});
 
 const LoginPage = () => {
-  return (
-    <div>
-        
-    </div>
-  )
-}
+  const { login, isLoading, error, clearError } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || ROUTES.HOME;
 
-export default LoginPage
+  const [showPw, setShowPw] = useState(false);
+  const [unverified, setUnverified] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(schema) });
+
+  const onSubmit = async (data) => {
+    setUnverified(false);
+    clearError?.();
+    const result = await login(data);
+    if (!result?.error) {
+      navigate(from, { replace: true });
+    } else {
+      const msg = (result.payload || "").toLowerCase();
+      if (msg.includes("verify") || msg.includes("verification"))
+        setUnverified(true);
+    }
+  };
+
+  const handleGoogle = () =>
+    (window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`);
+  const handleFacebook = () =>
+    (window.location.href = `${import.meta.env.VITE_API_URL}/auth/facebook`);
+
+  return (
+    <AuthLayout>
+      <AuthHeading
+        title="Welcome back"
+        subtitle="Sign in to your Ticket Bro account."
+      />
+
+      <SocialLogins googleFn={handleGoogle} facebookFn={handleFacebook} />
+
+      <div style={{ margin: "16px 0" }}>
+        <Divider label="or continue with email" />
+      </div>
+
+      {unverified ? <UnverifiedBanner /> : <ErrorBanner message={error} />}
+
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 14,
+          marginTop: 8,
+        }}
+      >
+        <Field
+          label="Email address"
+          error={errors.email?.message}
+          left={<Mail size={15} />}
+        >
+          <input
+            className="af-input"
+            {...register("email")}
+            type="email"
+            placeholder="you@example.com"
+            autoComplete="email"
+          />
+        </Field>
+
+        <Field
+          label={
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span>Password</span>
+              <Link
+                to={ROUTES.AUTH.FORGOT_PASSWORD}
+                style={{
+                  fontSize: 11.5,
+                  color: "var(--muted-foreground,#9ca3af)",
+                  textDecoration: "none",
+                  fontWeight: 400,
+                }}
+                onMouseEnter={(e) => (e.target.style.color = "#a3e635")}
+                onMouseLeave={(e) =>
+                  (e.target.style.color = "var(--muted-foreground,#9ca3af)")
+                }
+              >
+                Forgot password?
+              </Link>
+            </div>
+          }
+          error={errors.password?.message}
+          left={<Lock size={15} />}
+          right={
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+                display: "flex",
+                color: "inherit",
+              }}
+            >
+              {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+            </button>
+          }
+        >
+          <input
+            className="af-input"
+            {...register("password")}
+            type={showPw ? "text" : "password"}
+            placeholder="••••••••"
+            autoComplete="current-password"
+          />
+        </Field>
+
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            cursor: "pointer",
+            width: "fit-content",
+            userSelect: "none",
+          }}
+        >
+          <input
+            {...register("rememberMe")}
+            type="checkbox"
+            style={{
+              width: 14,
+              height: 14,
+              accentColor: "#a3e635",
+              cursor: "pointer",
+            }}
+          />
+          <span
+            style={{ fontSize: 12.5, color: "var(--muted-foreground,#6b7280)" }}
+          >
+            Remember me
+          </span>
+        </label>
+
+        <SubmitBtn loading={isLoading}>
+          Sign in <ArrowRight size={15} />
+        </SubmitBtn>
+      </form>
+
+      <AuthFooter
+        text="Don't have an account?"
+        linkText="Create one →"
+        to={ROUTES.AUTH.REGISTER}
+      />
+    </AuthLayout>
+  );
+};
+
+export default LoginPage;
+ 
