@@ -14,7 +14,7 @@
 import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import { PageLoader } from "@/components/common/Loader";
+import { PageLoader } from "@/components/shared/Loader";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { UserRole } from "@/types/auth.types";
 
