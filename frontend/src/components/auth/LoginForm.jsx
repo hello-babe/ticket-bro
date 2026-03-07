@@ -1,80 +1,66 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
-import { loginSchema } from '@/utils/validators';
-import useAuth from '@/context/AuthContext';
-import authConfig from '@/config/auth.config';
-import SocialLogin from './SocialLogin';
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Link } from "react-router-dom";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
-// ── Input Field ─────────────────────────────────────────────
-const Field = ({ label, error, left, right, children }) => (
-  <div className="flex flex-col gap-1">
-    {label && (
-      <div className="flex items-center justify-between">
-        {typeof label === 'string'
-          ? <label className="text-[0.75rem] font-medium text-foreground">{label}</label>
-          : label
-        }
-      </div>
-    )}
-    <div className={[
-      'flex items-center gap-2 px-3 h-10 rounded-lg border bg-card transition-colors duration-150',
-      error
-        ? 'border-destructive'
-        : 'border-input focus-within:border-ring hover:border-ring/60',
-    ].join(' ')}>
-      {left && <span className="flex-shrink-0 text-muted-foreground">{left}</span>}
-      <div className="flex-1 min-w-0 [&_input]:w-full [&_input]:bg-transparent [&_input]:outline-none [&_input]:border-none [&_input]:text-[0.875rem] [&_input]:text-foreground [&_input]:placeholder:text-muted-foreground/50 [&_input]:leading-none">
-        {children}
-      </div>
-      {right && <span className="flex-shrink-0 text-muted-foreground">{right}</span>}
-    </div>
-    {error && <p className="text-[0.7rem] text-destructive leading-none">{error}</p>}
-  </div>
-);
+import useAuth from "@/context/AuthContext";
+import authConfig from "@/config/auth.config";
+import SocialLogin from "./SocialLogin";
+import { loginSchema } from "@/utils/validators";
 
-// ── Divider ─────────────────────────────────────────────
-const Divider = ({ label }) => (
-  <div className="flex items-center gap-3 my-2">
-    <div className="flex-1 h-px bg-border" />
-    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground whitespace-nowrap">
-      {label}
-    </span>
-    <div className="flex-1 h-px bg-border" />
-  </div>
-);
+// Import all shared components from shared folder
+import {
+  InputField,
+  Button,
+  Divider,
+  UnverifiedBanner,
+} from "@/components/shared";
 
-// ── Spinner ─────────────────────────────────────────────
-const Spinner = () => (
-  <>
-    <span
-      className="w-4 h-4 rounded-full border-2 border-black/20 border-t-black inline-block"
-      style={{ animation: 'btnSpin 0.65s linear infinite' }}
-    />
-    <style>{`@keyframes btnSpin { to { transform: rotate(360deg); } }`}</style>
-  </>
-);
-
-// ── Login Form ─────────────────────────────────────────────
 const LoginForm = () => {
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, error, clearError } = useAuth();
   const [showPw, setShowPw] = useState(false);
+  const [unverified, setUnverified] = useState(false);
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm({ resolver: zodResolver(loginSchema) });
 
+  const onSubmit = async (data) => {
+    setUnverified(false);
+    clearError();
+    const result = await login(data);
+
+    if (result?.error) {
+      const msg = result.payload || "";
+      if (
+        msg.toLowerCase().includes("verify your email") ||
+        msg.toLowerCase().includes("verification")
+      ) {
+        setUnverified(true);
+      }
+    }
+  };
+
+  // Clear errors when input changes
+  useEffect(() => {
+    const subscription = watch(() => {
+      if (unverified) setUnverified(false);
+      if (error) clearError();
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, unverified, error, clearError]);
+
   return (
     <div className="w-full">
-
-      {/* Header */}
       <div className="mb-5">
-        <h2 className="font-heading font-extrabold tracking-tight text-foreground leading-tight mb-1"
-            style={{ fontSize: 'clamp(1.3rem, 2vw, 1.5rem)' }}>
+        <h2
+          className="font-heading font-extrabold tracking-tight text-foreground leading-tight mb-1"
+          style={{ fontSize: "clamp(1.3rem, 2vw, 1.5rem)" }}
+        >
           Sign in
         </h2>
         <p className="text-[0.78rem] text-muted-foreground">
@@ -82,36 +68,32 @@ const LoginForm = () => {
         </p>
       </div>
 
-      {/* Social Login */}
       <SocialLogin />
-
-      {/* Divider */}
       <Divider label="or sign in with email" />
 
-      {/* Form */}
-      <form onSubmit={handleSubmit(login)} className="flex flex-col gap-3">
+      {unverified && <UnverifiedBanner />}
+      {error && !unverified && (
+        <p className="text-[0.75rem] text-destructive mb-3 text-center">
+          {error}
+        </p>
+      )}
 
-        {/* Email */}
-        <Field
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
+        <InputField
+          id="email"
           label="Email address"
           error={errors.email?.message}
           left={<Mail size={14} />}
-        >
-          <input
-            {...register('email')}
-            type="email"
-            placeholder="you@example.com"
-            autoComplete="email"
-          />
-        </Field>
+          placeholder="you@example.com"
+          autoComplete="email"
+          {...register("email")}
+        />
 
-        {/* Password */}
-        <Field
+        <InputField
+          id="password"
           label={
             <div className="flex items-center justify-between w-full">
-              <label className="text-[0.75rem] font-medium text-foreground">
-                Password
-              </label>
+              <span>Password</span>
               <Link
                 to={authConfig.routes.forgotPassword}
                 tabIndex={-1}
@@ -127,35 +109,40 @@ const LoginForm = () => {
             <button
               type="button"
               tabIndex={-1}
-              onClick={() => setShowPw(v => !v)}
+              onClick={() => setShowPw((v) => !v)}
               className="hover:text-foreground transition-colors duration-150"
+              aria-label={showPw ? "Hide password" : "Show password"}
             >
               {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
           }
-        >
-          <input
-            {...register('password')}
-            type={showPw ? 'text' : 'password'}
-            placeholder="••••••••"
-            autoComplete="current-password"
-          />
-        </Field>
+          placeholder="••••••••"
+          type={showPw ? "text" : "password"}
+          autoComplete="current-password"
+          {...register("password")}
+        />
 
         {/* Remember me */}
         <label className="flex items-center gap-2 cursor-pointer w-fit group">
           <div className="relative flex-shrink-0">
-            <input {...register('rememberMe')} type="checkbox" className="peer sr-only" />
-            <div
-              className="w-3.5 h-3.5 rounded border border-input bg-card flex items-center justify-center
-                peer-checked:bg-[#a3e635] peer-checked:border-[#a3e635]
-                transition-colors duration-150"
+            <input
+              {...register("rememberMe")}
+              type="checkbox"
+              className="peer sr-only"
             />
+            <div className="w-3.5 h-3.5 rounded border border-input bg-card flex items-center justify-center peer-checked:bg-[#a3e635] peer-checked:border-[#a3e635] transition-colors duration-150" />
             <svg
               className="absolute inset-0 m-auto w-2 h-2 text-black opacity-0 peer-checked:opacity-100 transition-opacity duration-150 pointer-events-none"
-              viewBox="0 0 10 8" fill="none"
+              viewBox="0 0 10 8"
+              fill="none"
             >
-              <path d="M1 4l2.5 2.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M1 4l2.5 2.5L9 1"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </div>
           <span className="text-[0.72rem] text-muted-foreground group-hover:text-foreground transition-colors duration-150 select-none">
@@ -163,26 +150,14 @@ const LoginForm = () => {
           </span>
         </label>
 
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="
-            mt-1 w-full h-10 flex items-center justify-center gap-2
-            rounded-lg bg-[#a3e635] text-black text-[0.85rem] font-semibold font-heading
-            hover:brightness-110 active:brightness-95
-            disabled:opacity-50 disabled:cursor-not-allowed
-            transition-all duration-150 cursor-pointer
-          "
-        >
-          {isLoading ? <Spinner /> : <><span>Sign in</span><ArrowRight size={14} /></>}
-        </button>
-
+        <Button type="submit" isLoading={isLoading}>
+          <span>Sign in</span>
+          <ArrowRight size={14} />
+        </Button>
       </form>
 
-      {/* Register link */}
       <p className="text-[0.75rem] text-muted-foreground text-center mt-5">
-        Don't have an account?{' '}
+        Don't have an account?{" "}
         <Link
           to={authConfig.routes.register}
           className="font-semibold font-heading text-foreground no-underline hover:text-[#a3e635] transition-colors duration-150"
@@ -190,7 +165,6 @@ const LoginForm = () => {
           Create one →
         </Link>
       </p>
-
     </div>
   );
 };

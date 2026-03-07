@@ -1,24 +1,52 @@
-import api from '../api/authApi';
+// frontend/src/services/authService.js
+
+import api from "../api/authApi";
+import authConfig from "../config/auth.config";
+import { storageUtils } from "../utils/storageUtils"; // FIX: static import — no dynamic await import()
 
 const authService = {
-  register:           (d) => api.post('/auth/register', d),
-  login:              (d) => api.post('/auth/login', d),
-  logout:             (rt) => api.post('/auth/logout', { refreshToken: rt }),
-  logoutAll:          () => api.post('/auth/logout-all'),
-  refreshToken:       (t) => api.post('/auth/refresh-token', { refreshToken: t }),
-  getMe:              () => api.get('/auth/me'),
-  verifyEmail:        (t) => api.post('/auth/verify-email', { token: t }),
-  resendVerification: (e) => api.post('/auth/resend-verification', { email: e }),
-  forgotPassword:     (e) => api.post('/auth/forgot-password', { email: e }),
-  resetPassword:      (d) => api.post('/auth/reset-password', d),
-  changePassword:     (d) => api.post('/auth/change-password', d),
-  getActiveSessions:  () => api.get('/auth/sessions'),
-  setup2FA:           () => api.post('/auth/2fa/setup'),
-  enable2FA:          (t) => api.post('/auth/2fa/enable', { token: t }),
-  disable2FA:         (p) => api.post('/auth/2fa/disable', { password: p }),
-  verifyTwoFactor:    (email, otp) => api.post('/auth/2fa/verify', { email, otp }),
-  googleOAuth:        () => { window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/oauth/google`; },
-  facebookOAuth:      () => { window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/oauth/facebook`; },
+  // ── Core auth ─────────────────────────────────────────────────────────────
+  register: (data) => api.post("/auth/register", data),
+  login: (data) => api.post("/auth/login", data),
+
+  // FIX: Must be async to use await. Also use static import (above) instead
+  // of dynamic await import() which is unnecessary and was causing a syntax error.
+  logout: async () => {
+    const rt = storageUtils.getRefreshToken();
+    return api.post("/auth/logout", { refreshToken: rt });
+  },
+
+  logoutAll: () => api.post("/auth/logout-all"),
+  refreshToken: (token) =>
+    api.post("/auth/refresh-token", { refreshToken: token }),
+  getMe: () => api.get("/auth/me"),
+
+  // ── Email verification ────────────────────────────────────────────────────
+  verifyEmail: (token) => api.post("/auth/verify-email", { token }),
+  resendVerification: (email) =>
+    api.post("/auth/resend-verification", { email }),
+
+  // ── Password ──────────────────────────────────────────────────────────────
+  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
+  resetPassword: (data) => api.post("/auth/reset-password", data),
+  changePassword: (data) => api.post("/auth/change-password", data),
+
+  // ── Sessions ──────────────────────────────────────────────────────────────
+  getActiveSessions: () => api.get("/auth/sessions"),
+
+  // ── 2FA ───────────────────────────────────────────────────────────────────
+  setup2FA: () => api.post("/auth/2fa/setup"),
+  enable2FA: (token) => api.post("/auth/2fa/enable", { token }),
+  disable2FA: (password) => api.post("/auth/2fa/disable", { password }),
+  verifyTwoFactor: (email, otp) => api.post("/auth/2fa/verify", { email, otp }),
+
+  // ── OAuth — redirect-based, not API calls ─────────────────────────────────
+  googleOAuth: () => {
+    window.location.href = `${authConfig.apiBaseUrl}/auth/oauth/google`;
+  },
+  facebookOAuth: () => {
+    window.location.href = `${authConfig.apiBaseUrl}/auth/oauth/facebook`;
+  },
 };
 
 export default authService;
