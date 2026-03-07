@@ -1,6 +1,6 @@
 // frontend/src/services/authService.js
 
-import api from "../api/authApi";
+import api from "../api/api";
 import authConfig from "../config/auth.config";
 import { storageUtils } from "../utils/storageUtils"; // FIX: static import — no dynamic await import()
 

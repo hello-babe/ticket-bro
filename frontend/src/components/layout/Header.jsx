@@ -36,11 +36,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuGroup,
-  DropdownMenuShortcut,
 } from "@/components/ui/dropdown-menu";
 import Container from "@/components/layout/Container";
 import { useTheme } from "@/context/ThemeContext";
@@ -48,11 +44,11 @@ import useAuth from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useNotification } from "@/context/NotificationContext";
 import { useSearch } from "@/context/SearchContext";
-import { useLocation, LOCATIONS } from "@/context/LocationContext"; // ← from context
+import { useLocation, LOCATIONS } from "@/context/LocationContext";
 
 import lightLogo from "@/assets/images/ticket-bro-logo-light-mode.png";
 import darkLogo from "@/assets/images/ticket-bro-logo-dark-mode.png";
-import ScrollToTop from "@/hooks/scrollToTop";
+import UserMenu from "@/components/user/UserMenu";
 
 const UserRole = { ADMIN: "admin", ORGANIZER: "organizer", USER: "user" };
 
@@ -159,7 +155,7 @@ const LocationSelector = ({ selectedLocation, onLocationChange }) => {
             <button
               onClick={handleDetect}
               disabled={detecting}
-              className="flex items-center gap-2.5 w-full px-3 py-2 rounded text-sm hover:bg-accent   text-left"
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded text-sm hover:bg-accent text-left"
             >
               <Locate className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="font-medium text-foreground">
@@ -188,7 +184,7 @@ const LocationSelector = ({ selectedLocation, onLocationChange }) => {
                       setOpen(false);
                       setLocSearch("");
                     }}
-                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded text-sm hover:bg-accent   text-left"
+                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded text-sm hover:bg-accent text-left"
                   >
                     <span className="text-base leading-none shrink-0">
                       {loc.flag}
@@ -226,13 +222,15 @@ const Header = () => {
   const navigate = useNavigate();
 
   const { theme, appliedTheme, setThemeMode } = useTheme();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { itemCount } = useCart();
   const { unreadCount } = useNotification();
   const { setQuery } = useSearch();
-
-  // ── Location from global context ──────────
   const { selectedLocation, changeLocation } = useLocation();
+
+  const canCreateEvent =
+    isAuthenticated &&
+    (user?.role === UserRole.ADMIN || user?.role === UserRole.ORGANIZER);
 
   const getThemeIcon = () => {
     if (theme === "light") return <Sun className="h-4 w-4" />;
@@ -248,15 +246,6 @@ const Header = () => {
       `/search/results?q=${encodeURIComponent(searchQuery)}&location=${encodeURIComponent(selectedLocation?.id || "")}`,
     );
   };
-
-  const handleLogout = async () => {
-    await logout();
-    navigate("/");
-  };
-
-  const canCreateEvent =
-    isAuthenticated &&
-    (user?.role === UserRole.ADMIN || user?.role === UserRole.ORGANIZER);
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -346,6 +335,7 @@ const Header = () => {
               </Link>
             </Button>
 
+            {/* Theme switcher */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -387,142 +377,8 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="relative h-9 w-9 rounded-full p-0 hover:bg-accent ml-0.5"
-                  >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar} alt={user?.name} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                        {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {user?.name}
-                      </p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user?.email}
-                      </p>
-                      <Badge
-                        variant="outline"
-                        className="mt-1 w-fit text-[10px] px-1 py-0"
-                      >
-                        {user?.role}
-                      </Badge>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem asChild className="h-8 text-sm">
-                      <Link to="/bookings" className="cursor-pointer">
-                        <Ticket className="mr-2 h-3.5 w-3.5" />
-                        <span>My Tickets</span>
-                        <DropdownMenuShortcut className="text-xs">
-                          ⌘T
-                        </DropdownMenuShortcut>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="h-8 text-sm">
-                      <Link to="/calendar" className="cursor-pointer">
-                        <Calendar className="mr-2 h-3.5 w-3.5" />
-                        <span>Calendar</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="h-8 text-sm">
-                      <Link to="/payments/history" className="cursor-pointer">
-                        <CreditCard className="mr-2 h-3.5 w-3.5" />
-                        <span>Payments</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem asChild className="h-8 text-sm">
-                      <Link to="/profile" className="cursor-pointer">
-                        <User className="mr-2 h-3.5 w-3.5" />
-                        <span>Profile</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="h-8 text-sm">
-                      <Link to="/favorites" className="cursor-pointer">
-                        <Heart className="mr-2 h-3.5 w-3.5" />
-                        <span>Favorites</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="h-8 text-sm">
-                      <Link to="/settings" className="cursor-pointer">
-                        <Settings className="mr-2 h-3.5 w-3.5" />
-                        <span>Settings</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  {canCreateEvent && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild className="h-8 text-sm">
-                        <Link
-                          to="/events/create"
-                          className="cursor-pointer text-primary"
-                        >
-                          <PlusCircle className="mr-2 h-3.5 w-3.5" />
-                          <span className="font-medium">Create Event</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="text-destructive focus:text-destructive cursor-pointer h-8 text-sm"
-                  >
-                    <LogOut className="mr-2 h-3.5 w-3.5" />
-                    <span>Log out</span>
-                    <DropdownMenuShortcut className="text-xs">
-                      ⇧⌘Q
-                    </DropdownMenuShortcut>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1.5 hidden sm:flex h-9 px-3 text-sm"
-                  asChild
-                >
-                  <Link to="?auth=login">
-                    <User className="h-3.5 w-3.5" />
-                    Sign In
-                  </Link>
-                </Button>
-                <Button
-                  size="sm"
-                  className="gap-1.5 hidden sm:flex h-9 px-3 text-sm text-black"
-                  asChild
-                >
-                  <Link to="?auth=register">Sign Up</Link>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="sm:hidden h-9 w-9"
-                  asChild
-                >
-                  <Link to="?auth=login">
-                    <User className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </>
-            )}
+            {/* ── UserMenu replaces the inline auth block ── */}
+            <UserMenu />
 
             {canCreateEvent && (
               <Button
@@ -551,7 +407,6 @@ const Header = () => {
                   onClose={() => setIsMobileMenuOpen(false)}
                   isAuthenticated={isAuthenticated}
                   user={user}
-                  onLogout={handleLogout}
                   canCreateEvent={canCreateEvent}
                   selectedLocation={selectedLocation}
                   onLocationChange={changeLocation}
@@ -590,197 +445,204 @@ const MobileMenuContent = ({
   onClose,
   isAuthenticated,
   user,
-  onLogout,
   canCreateEvent,
   selectedLocation,
   onLocationChange,
-}) => (
-  <div className="flex flex-col h-full">
-    {isAuthenticated ? (
-      <div className="p-4 border-b border-border bg-muted/30">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.avatar} />
-            <AvatarFallback className="bg-primary/10 text-primary">
-              {user?.name?.charAt(0)?.toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <p className="text-sm font-semibold">{user?.name}</p>
-            <p className="text-xs text-muted-foreground">{user?.email}</p>
-            <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0">
-              {user?.role}
-            </Badge>
+}) => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+    onClose();
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      {isAuthenticated ? (
+        <div className="p-4 border-b border-border bg-muted/30">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={user?.avatar} />
+              <AvatarFallback className="bg-primary/10 text-primary">
+                {user?.name?.charAt(0)?.toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <p className="text-sm font-semibold">{user?.name}</p>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
+              <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0">
+                {user?.role}
+              </Badge>
+            </div>
           </div>
         </div>
-      </div>
-    ) : (
-      <div className="p-4 border-b border-border space-y-2">
-        <Button asChild className="w-full h-9 text-sm" onClick={onClose}>
-          <Link to="?auth=login">Sign In</Link>
-        </Button>
-        <Button
-          asChild
-          variant="outline"
-          className="w-full h-9 text-sm"
-          onClick={onClose}
-        >
-          <Link to="?auth=register">Create Account</Link>
-        </Button>
-      </div>
-    )}
+      ) : (
+        <div className="p-4 border-b border-border space-y-2">
+          <Button asChild className="w-full h-9 text-sm" onClick={onClose}>
+            <Link to="?auth=login">Sign In</Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="w-full h-9 text-sm"
+            onClick={onClose}
+          >
+            <Link to="?auth=register">Create Account</Link>
+          </Button>
+        </div>
+      )}
 
-    <nav className="flex-1 p-4 overflow-y-auto">
-      <ul className="space-y-0.5">
-        <MobileNavItem
-          to="/"
-          icon={<LayoutDashboard className="h-4 w-4" />}
-          label="Home"
-          onClose={onClose}
-        />
-        <MobileNavItem
-          to="/search"
-          icon={<Search className="h-4 w-4" />}
-          label="Search"
-          onClose={onClose}
-        />
-        <MobileNavItem
-          to="/browse"
-          icon={<Calendar className="h-4 w-4" />}
-          label="Browse Events"
-          onClose={onClose}
-        />
-        {isAuthenticated && (
-          <>
-            <li className="pt-3 pb-1">
-              <p className="text-[10px] font-medium text-muted-foreground px-3">
-                ACCOUNT
-              </p>
-            </li>
-            <MobileNavItem
-              to="/bookings"
-              icon={<Ticket className="h-4 w-4" />}
-              label="My Tickets"
-              onClose={onClose}
-            />
-            <MobileNavItem
-              to="/calendar"
-              icon={<Calendar className="h-4 w-4" />}
-              label="Calendar"
-              onClose={onClose}
-            />
-            <MobileNavItem
-              to="/payments/history"
-              icon={<CreditCard className="h-4 w-4" />}
-              label="Payments"
-              onClose={onClose}
-            />
-            <MobileNavItem
-              to="/favorites"
-              icon={<Heart className="h-4 w-4" />}
-              label="Favorites"
-              onClose={onClose}
-            />
-            <MobileNavItem
-              to="/profile"
-              icon={<User className="h-4 w-4" />}
-              label="Profile"
-              onClose={onClose}
-            />
-            <MobileNavItem
-              to="/settings"
-              icon={<Settings className="h-4 w-4" />}
-              label="Settings"
-              onClose={onClose}
-            />
-            {canCreateEvent && (
-              <>
-                <li className="pt-3 pb-1">
-                  <p className="text-[10px] font-medium text-muted-foreground px-3">
-                    ORGANIZER
-                  </p>
-                </li>
-                <MobileNavItem
-                  to="/events/create"
-                  icon={<PlusCircle className="h-4 w-4 text-primary" />}
-                  label={
-                    <span className="text-primary text-sm font-medium">
-                      Create Event
-                    </span>
-                  }
-                  onClose={onClose}
-                />
-                <MobileNavItem
-                  to="/organizer/dashboard"
-                  icon={<LayoutDashboard className="h-4 w-4" />}
-                  label="Organizer Dashboard"
-                  onClose={onClose}
-                />
-                <MobileNavItem
-                  to="/organizer/events"
-                  icon={<Calendar className="h-4 w-4" />}
-                  label="Manage Events"
-                  onClose={onClose}
-                />
-                <MobileNavItem
-                  to="/organizer/revenue"
-                  icon={<CreditCard className="h-4 w-4" />}
-                  label="Revenue"
-                  onClose={onClose}
-                />
-              </>
-            )}
-          </>
-        )}
-        <li className="pt-3 pb-1">
-          <p className="text-[10px] font-medium text-muted-foreground px-3">
-            SUPPORT
-          </p>
-        </li>
-        <MobileNavItem
-          to="/about"
-          icon={<Info className="h-4 w-4" />}
-          label="About"
-          onClose={onClose}
-        />
-        <MobileNavItem
-          to="/contact"
-          icon={<Mail className="h-4 w-4" />}
-          label="Contact"
-          onClose={onClose}
-        />
-        <MobileNavItem
-          to="/faq"
-          icon={<HelpCircle className="h-4 w-4" />}
-          label="FAQ"
-          onClose={onClose}
-        />
-      </ul>
-    </nav>
+      <nav className="flex-1 p-4 overflow-y-auto">
+        <ul className="space-y-0.5">
+          <MobileNavItem
+            to="/"
+            icon={<LayoutDashboard className="h-4 w-4" />}
+            label="Home"
+            onClose={onClose}
+          />
+          <MobileNavItem
+            to="/search"
+            icon={<Search className="h-4 w-4" />}
+            label="Search"
+            onClose={onClose}
+          />
+          <MobileNavItem
+            to="/browse"
+            icon={<Calendar className="h-4 w-4" />}
+            label="Browse Events"
+            onClose={onClose}
+          />
+          {isAuthenticated && (
+            <>
+              <li className="pt-3 pb-1">
+                <p className="text-[10px] font-medium text-muted-foreground px-3">
+                  ACCOUNT
+                </p>
+              </li>
+              <MobileNavItem
+                to="/bookings"
+                icon={<Ticket className="h-4 w-4" />}
+                label="My Tickets"
+                onClose={onClose}
+              />
+              <MobileNavItem
+                to="/calendar"
+                icon={<Calendar className="h-4 w-4" />}
+                label="Calendar"
+                onClose={onClose}
+              />
+              <MobileNavItem
+                to="/payments/history"
+                icon={<CreditCard className="h-4 w-4" />}
+                label="Payments"
+                onClose={onClose}
+              />
+              <MobileNavItem
+                to="/favorites"
+                icon={<Heart className="h-4 w-4" />}
+                label="Favorites"
+                onClose={onClose}
+              />
+              <MobileNavItem
+                to="/profile"
+                icon={<User className="h-4 w-4" />}
+                label="Profile"
+                onClose={onClose}
+              />
+              <MobileNavItem
+                to="/settings"
+                icon={<Settings className="h-4 w-4" />}
+                label="Settings"
+                onClose={onClose}
+              />
+              {canCreateEvent && (
+                <>
+                  <li className="pt-3 pb-1">
+                    <p className="text-[10px] font-medium text-muted-foreground px-3">
+                      ORGANIZER
+                    </p>
+                  </li>
+                  <MobileNavItem
+                    to="/events/create"
+                    icon={<PlusCircle className="h-4 w-4 text-primary" />}
+                    label={
+                      <span className="text-primary text-sm font-medium">
+                        Create Event
+                      </span>
+                    }
+                    onClose={onClose}
+                  />
+                  <MobileNavItem
+                    to="/organizer/dashboard"
+                    icon={<LayoutDashboard className="h-4 w-4" />}
+                    label="Organizer Dashboard"
+                    onClose={onClose}
+                  />
+                  <MobileNavItem
+                    to="/organizer/events"
+                    icon={<Calendar className="h-4 w-4" />}
+                    label="Manage Events"
+                    onClose={onClose}
+                  />
+                  <MobileNavItem
+                    to="/organizer/revenue"
+                    icon={<CreditCard className="h-4 w-4" />}
+                    label="Revenue"
+                    onClose={onClose}
+                  />
+                </>
+              )}
+            </>
+          )}
+          <li className="pt-3 pb-1">
+            <p className="text-[10px] font-medium text-muted-foreground px-3">
+              SUPPORT
+            </p>
+          </li>
+          <MobileNavItem
+            to="/about"
+            icon={<Info className="h-4 w-4" />}
+            label="About"
+            onClose={onClose}
+          />
+          <MobileNavItem
+            to="/contact"
+            icon={<Mail className="h-4 w-4" />}
+            label="Contact"
+            onClose={onClose}
+          />
+          <MobileNavItem
+            to="/faq"
+            icon={<HelpCircle className="h-4 w-4" />}
+            label="FAQ"
+            onClose={onClose}
+          />
+        </ul>
+      </nav>
 
-    {isAuthenticated && (
-      <div className="p-4 border-t border-border">
-        <Button
-          variant="destructive"
-          className="w-full gap-2 h-9 text-sm"
-          onClick={() => {
-            onLogout();
-            onClose();
-          }}
-        >
-          <LogOut className="h-3.5 w-3.5" /> Logout
-        </Button>
-      </div>
-    )}
-  </div>
-);
+      {isAuthenticated && (
+        <div className="p-4 border-t border-border">
+          <Button
+            variant="destructive"
+            className="w-full gap-2 h-9 text-sm"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-3.5 w-3.5" /> Logout
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const MobileNavItem = ({ to, icon, label, onClose }) => (
   <li>
     <Link
       to={to}
       onClick={onClose}
-      className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted   text-sm min-h-9"
+      className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-sm min-h-9"
     >
       <span className="text-muted-foreground">{icon}</span>
       <span>{label}</span>

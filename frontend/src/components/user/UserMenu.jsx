@@ -1,32 +1,46 @@
 // frontend/src/components/layout/UserMenu.jsx
 import React from "react";
-import { Link } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuGroup,
-  DropdownMenuShortcut,
-} from "@/components/ui/dropdown-menu";
-
+import { Link, useNavigate } from "react-router-dom";
 import {
   User,
-  Heart,
+  LogOut,
   Settings,
   Ticket,
   Calendar,
   CreditCard,
+  Heart,
   PlusCircle,
-  LogOut,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+  DropdownMenuShortcut,
+} from "@/components/ui/dropdown-menu";
+import useAuth from "@/context/AuthContext";
 
-const UserMenu = ({ user, isAuthenticated, onLogout, canCreateEvent }) => {
+const UserRole = { ADMIN: "admin", ORGANIZER: "organizer", USER: "user" };
+
+const UserMenu = () => {
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const canCreateEvent =
+    isAuthenticated &&
+    (user?.role === UserRole.ADMIN || user?.role === UserRole.ORGANIZER);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+
   if (!isAuthenticated) {
     return (
       <>
@@ -48,6 +62,16 @@ const UserMenu = ({ user, isAuthenticated, onLogout, canCreateEvent }) => {
         >
           <Link to="?auth=register">Sign Up</Link>
         </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="sm:hidden h-9 w-9"
+          asChild
+        >
+          <Link to="?auth=login">
+            <User className="h-4 w-4" />
+          </Link>
+        </Button>
       </>
     );
   }
@@ -67,6 +91,7 @@ const UserMenu = ({ user, isAuthenticated, onLogout, canCreateEvent }) => {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
@@ -82,68 +107,76 @@ const UserMenu = ({ user, isAuthenticated, onLogout, canCreateEvent }) => {
             </Badge>
           </div>
         </DropdownMenuLabel>
+
         <DropdownMenuSeparator />
+
         <DropdownMenuGroup>
           <DropdownMenuItem asChild className="h-8 text-sm">
-            <Link to="/bookings">
+            <Link to="/bookings" className="cursor-pointer">
               <Ticket className="mr-2 h-3.5 w-3.5" />
-              My Tickets
+              <span>My Tickets</span>
               <DropdownMenuShortcut className="text-xs">
                 ⌘T
               </DropdownMenuShortcut>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="h-8 text-sm">
-            <Link to="/calendar">
+            <Link to="/calendar" className="cursor-pointer">
               <Calendar className="mr-2 h-3.5 w-3.5" />
-              Calendar
+              <span>Calendar</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="h-8 text-sm">
-            <Link to="/payments/history">
+            <Link to="/payments/history" className="cursor-pointer">
               <CreditCard className="mr-2 h-3.5 w-3.5" />
-              Payments
+              <span>Payments</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
+
         <DropdownMenuSeparator />
+
         <DropdownMenuGroup>
           <DropdownMenuItem asChild className="h-8 text-sm">
-            <Link to="/profile">
+            <Link to="/profile" className="cursor-pointer">
               <User className="mr-2 h-3.5 w-3.5" />
-              Profile
+              <span>Profile</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="h-8 text-sm">
-            <Link to="/favorites">
+            <Link to="/favorites" className="cursor-pointer">
               <Heart className="mr-2 h-3.5 w-3.5" />
-              Favorites
+              <span>Favorites</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="h-8 text-sm">
-            <Link to="/settings">
+            <Link to="/settings" className="cursor-pointer">
               <Settings className="mr-2 h-3.5 w-3.5" />
-              Settings
+              <span>Settings</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
+
         {canCreateEvent && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild className="h-8 text-sm">
-              <Link to="/events/create" className="text-primary">
+              <Link to="/events/create" className="cursor-pointer text-primary">
                 <PlusCircle className="mr-2 h-3.5 w-3.5" />
-                Create Event
+                <span className="font-medium">Create Event</span>
               </Link>
             </DropdownMenuItem>
           </>
         )}
+
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={onLogout}
-          className="text-destructive cursor-pointer h-8 text-sm"
+          onClick={handleLogout}
+          className="text-destructive focus:text-destructive cursor-pointer h-8 text-sm"
         >
-          <LogOut className="mr-2 h-3.5 w-3.5" /> Log out
+          <LogOut className="mr-2 h-3.5 w-3.5" />
+          <span>Log out</span>
+          <DropdownMenuShortcut className="text-xs">⇧⌘Q</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
