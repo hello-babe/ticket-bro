@@ -422,12 +422,6 @@ const Header = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
                     <DropdownMenuItem asChild className="h-8 text-sm">
-                      <Link to="/dashboard" className="cursor-pointer">
-                        <LayoutDashboard className="mr-2 h-3.5 w-3.5" />
-                        <span>Dashboard</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="h-8 text-sm">
                       <Link to="/bookings" className="cursor-pointer">
                         <Ticket className="mr-2 h-3.5 w-3.5" />
                         <span>My Tickets</span>
@@ -663,12 +657,6 @@ const MobileMenuContent = ({
                 ACCOUNT
               </p>
             </li>
-            <MobileNavItem
-              to="/dashboard"
-              icon={<LayoutDashboard className="h-4 w-4" />}
-              label="Dashboard"
-              onClose={onClose}
-            />
             <MobileNavItem
               to="/bookings"
               icon={<Ticket className="h-4 w-4" />}
