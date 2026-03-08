@@ -23,7 +23,7 @@ import {
   Search
 } from 'lucide-react';
 
-import useAuth from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -48,11 +48,12 @@ import Header from '@/components/layout/Header';
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, logout, hasRole } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
 
-  // Check if user is admin
-  if (!hasRole('admin')) {
+  // Guard: redirect non-admin users. ProtectedRoute in AppRoutes already does this,
+  // but we add a safety net in case the layout is used outside the route tree.
+  if (!user || !['admin', 'super_admin'].includes(user?.role)) {
     return <Navigate to="/403" replace />;
   }
 

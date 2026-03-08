@@ -11,6 +11,9 @@ import {
   Heart,
   PlusCircle,
   Camera,
+  LayoutDashboard,
+  BarChart3,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,7 +29,7 @@ import {
   DropdownMenuShortcut,
 } from "@/components/ui/dropdown-menu";
 import AvatarUpload from "@/components/user/AvatarUpload";
-import useAuth from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 
 const UserRole = { ADMIN: "admin", ORGANIZER: "organizer", USER: "user" };
 
@@ -230,15 +233,61 @@ const UserMenu = () => {
           {canCreateEvent && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild className="h-9 text-sm lg:hidden">
-                <Link
-                  to="/events/create"
-                  className="cursor-pointer text-primary flex items-center gap-2"
-                >
-                  <PlusCircle className="h-3.5 w-3.5 shrink-0" />
-                  <span className="font-medium">Create Event</span>
-                </Link>
-              </DropdownMenuItem>
+              {/* Organizer links */}
+              {(user?.role === UserRole.ORGANIZER || user?.role === UserRole.ADMIN) && (
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground px-2 py-1">
+                    Organizer
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem asChild className="h-9 text-sm">
+                    <Link to="/organizer/dashboard" className="cursor-pointer flex items-center gap-2">
+                      <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
+                      <span>Organizer Dashboard</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="h-9 text-sm">
+                    <Link to="/organizer/events" className="cursor-pointer flex items-center gap-2">
+                      <Calendar className="h-3.5 w-3.5 shrink-0" />
+                      <span>My Events</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="h-9 text-sm">
+                    <Link to="/organizer/revenue" className="cursor-pointer flex items-center gap-2">
+                      <BarChart3 className="h-3.5 w-3.5 shrink-0" />
+                      <span>Revenue</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="h-9 text-sm lg:hidden">
+                    <Link to="/organizer/events/create" className="cursor-pointer text-primary flex items-center gap-2">
+                      <PlusCircle className="h-3.5 w-3.5 shrink-0" />
+                      <span className="font-medium">Create Event</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              )}
+              {/* Admin-only links */}
+              {user?.role === UserRole.ADMIN && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="text-xs text-muted-foreground px-2 py-1">
+                      Admin
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem asChild className="h-9 text-sm">
+                      <Link to="/admin/dashboard" className="cursor-pointer flex items-center gap-2">
+                        <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
+                        <span>Admin Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="h-9 text-sm">
+                      <Link to="/admin/users" className="cursor-pointer flex items-center gap-2">
+                        <Users className="h-3.5 w-3.5 shrink-0" />
+                        <span>User Management</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </>
+              )}
             </>
           )}
 

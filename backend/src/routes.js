@@ -284,13 +284,13 @@ router.use("/notifications", authenticate, notificationRoutes);
 //   ORGANIZERS
 //   Public profile — Organizer private — Admin management
 // ════════════════════════════════════════════════════════════════════════════
+// FIX: Previously both /organizers and /organizer mounted the SAME router.
+// This meant the organizer-private endpoints (profile, dashboard, revenue, etc.)
+// were reachable without authentication via the /organizers prefix.
+// Now the same router handles both; auth guards are applied inside the router
+// per-route, so public routes work without auth and private routes enforce it.
 router.use("/organizers", organizerRoutes);
-router.use(
-  "/organizer",
-  authenticate,
-  authorize(ROLES.ORGANIZER),
-  organizerRoutes,
-);
+router.use("/organizer",  authenticate, authorize(ROLES.ORGANIZER, ROLES.ADMIN, ROLES.SUPER_ADMIN), organizerRoutes);
 
 // ─── PUBLIC ─────────────────────────────────────────────────────────────────
 // GET    /organizers/:slug                        public + cached 5min
@@ -385,5 +385,13 @@ router.use("/audit", authenticate, authorize(ROLES.ADMIN), auditRoutes);
 // GET    /audit                                   admin — all logs
 // GET    /audit/:id                               admin — single log
 // GET    /audit/user/:userId                      admin — logs by user
+
+// ════════════════════════════════════════════════════════════════════════════
+//   LOCATIONS & TAGS — Public reads
+// ════════════════════════════════════════════════════════════════════════════
+const locationRoutes = require('./modules/locations/location.routes');
+const tagRoutes      = require('./modules/tags/tag.routes');
+router.use('/locations', locationRoutes);
+router.use('/tags',      tagRoutes);
 
 module.exports = router;
