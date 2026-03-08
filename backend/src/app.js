@@ -8,6 +8,7 @@ const morgan = require("morgan");
 const compression = require("compression");
 const mongoSanitize = require("express-mongo-sanitize");
 const cookieParser = require("cookie-parser");
+const path = require("path");
 
 const env = require("./config/env");
 const { globalLimiter } = require("./config/rateLimit.config");
@@ -19,7 +20,6 @@ const {
 const { sanitizeBody } = require("./common/middleware/validation.middleware");
 const logger = require("./infrastructure/logger/logger");
 
-// Initialize passport strategies
 require("./modules/auth/strategies/passport");
 
 const app = express();
@@ -29,6 +29,9 @@ app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
     contentSecurityPolicy: env.isProduction(),
+    // ✅ FIX 1: Allow cross-origin image loading (avatar images)
+    // Default is "same-origin" which blocks localhost:5173 → localhost:5000
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   }),
 );
 
@@ -65,7 +68,7 @@ app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(cookieParser(env.COOKIE_SECRET));
 
 // ── Sanitization ──────────────────────────────────────────────────────────────
-app.use(mongoSanitize()); // Prevent MongoDB injection
+app.use(mongoSanitize());
 app.use(sanitizeBody);
 
 // ── Compression ───────────────────────────────────────────────────────────────
@@ -76,7 +79,7 @@ if (!env.isTest()) {
   app.use(morgan("combined", { stream: logger.stream }));
 }
 
-// ── Trust Proxy (for IP behind reverse proxy) ─────────────────────────────────
+// ── Trust Proxy ───────────────────────────────────────────────────────────────
 if (env.isProduction()) {
   app.set("trust proxy", 1);
 }
