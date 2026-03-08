@@ -12,7 +12,7 @@ const path = require("path");
 
 const env = require("./config/env");
 const { globalLimiter } = require("./config/rateLimit.config");
-const routes = require("./routes"); // ← your main routes.js
+const routes = require("./routes");
 const {
   errorHandler,
   notFound,
@@ -54,13 +54,9 @@ app.use(
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
 app.use(globalLimiter);
 
-// ── Webhook Raw Body (MUST come before express.json) ─────────────────────────
-// Stripe/Razorpay/PayPal require the raw body for signature verification
+// ── Webhook Raw Body ──────────────────────────────────────────────────────────
 const API_PREFIX = `${env.API_PREFIX}/${env.API_VERSION}`;
-app.use(
-  `${API_PREFIX}/webhooks`,
-  express.raw({ type: "application/json" }),
-);
+app.use(`${API_PREFIX}/webhooks`, express.raw({ type: "application/json" }));
 
 // ── Body Parsing ──────────────────────────────────────────────────────────────
 app.use(express.json({ limit: "10kb" }));
@@ -96,8 +92,19 @@ app.get("/health", (req, res) => {
 });
 
 // ── API Routes ────────────────────────────────────────────────────────────────
-// All routes defined in routes.js are now mounted under /api/v1
 app.use(API_PREFIX, routes);
+
+// ── Static Files ──────────────────────────────────────────────────────────────
+// ✅ FIX 2: Set Cross-Origin-Resource-Policy header before serving static files
+// Without this, browsers block cross-origin image loads even if CORS is fine
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  },
+  express.static(path.join(process.cwd(), "public/uploads")),
+);
 
 // ── 404 Handler ───────────────────────────────────────────────────────────────
 app.use(notFound);
