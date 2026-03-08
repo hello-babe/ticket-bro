@@ -1,8 +1,11 @@
 // frontend/src/store/slices/userSlice.js
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import userService from "../../services/userService";
-import { storageUtils } from "../../utils/storageUtils";
+import userService from "@/services/userService";
+import { storageUtils } from "@/utils/storageUtils";
+
+// ── Helper — safely extract data from { status, message, data } ──────────────
+const extract = (res) => res.data?.data ?? res.data;
 
 // ── Thunks ────────────────────────────────────────────────────────────────────
 
@@ -11,8 +14,8 @@ export const fetchProfile = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await userService.getMe();
-      const user = res.data.data;
-      storageUtils.setUser(user); // keep localStorage in sync
+      const user = extract(res);
+      storageUtils.setUser(user);
       return user;
     } catch (err) {
       return rejectWithValue(
@@ -27,7 +30,7 @@ export const updateProfile = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const res = await userService.updateMe(data);
-      const user = res.data.data;
+      const user = extract(res);
       storageUtils.setUser(user);
       return user;
     } catch (err) {
@@ -43,7 +46,7 @@ export const uploadAvatar = createAsyncThunk(
   async (file, { rejectWithValue }) => {
     try {
       const res = await userService.uploadAvatar(file);
-      const user = res.data.data;
+      const user = extract(res);
       storageUtils.setUser(user);
       return user;
     } catch (err) {
@@ -59,7 +62,7 @@ export const removeAvatar = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await userService.removeAvatar();
-      const user = res.data.data;
+      const user = extract(res);
       storageUtils.setUser(user);
       return user;
     } catch (err) {
@@ -75,7 +78,7 @@ export const fetchSessions = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await userService.getSessions();
-      return res.data.data;
+      return extract(res) ?? [];
     } catch (err) {
       return rejectWithValue(
         err.response?.data?.message || "Failed to load sessions.",
@@ -104,8 +107,8 @@ const initialState = {
   profile: null,
   sessions: [],
   isLoading: false,
-  isSaving: false, // separate flag for save operations (keeps UI responsive)
-  isUploading: false, // avatar upload
+  isSaving: false,
+  isUploading: false,
   error: null,
   successMsg: null,
 };
@@ -121,7 +124,7 @@ const userSlice = createSlice({
     clearSuccessMsg: (state) => {
       state.successMsg = null;
     },
-    clearUserState: () => initialState, // called on logout
+    clearUserState: () => initialState,
   },
 
   extraReducers: (builder) => {
@@ -200,7 +203,9 @@ const userSlice = createSlice({
     // revokeSession
     builder
       .addCase(revokeSession.fulfilled, (state, { payload: sessionId }) => {
-        state.sessions = state.sessions.filter((s) => s.id !== sessionId);
+        state.sessions = state.sessions.filter(
+          (s) => (s._id || s.id) !== sessionId,
+        );
         state.successMsg = "Session revoked.";
       })
       .addCase(revokeSession.rejected, (state, { payload }) => {
