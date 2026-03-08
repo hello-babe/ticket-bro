@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Menu,
   Search,
-  ShoppingCart,
+  ShoppingBag,
   Sun,
   Moon,
   Monitor,
@@ -221,7 +221,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
-  const { theme, appliedTheme, setThemeMode } = useTheme();
+  const { theme, isDark, setThemeMode } = useTheme();
   const { user, isAuthenticated } = useAuth();
   const { itemCount } = useCart();
   const { unreadCount } = useNotification();
@@ -252,17 +252,40 @@ const Header = () => {
       <Container>
         {/* Main row */}
         <div className="flex h-16 items-center justify-between gap-3">
-          {/* LEFT: Logo + divider + location */}
+          {/* LEFT: Hamburger (mobile, left-side) + Logo + divider + location */}
           <div className="flex items-center gap-3 shrink-0">
+            {/* ✅ Mobile menu trigger — now on the LEFT, before the logo */}
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden h-9 w-9"
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] p-0">
+                <MobileMenuContent
+                  onClose={() => setIsMobileMenuOpen(false)}
+                  isAuthenticated={isAuthenticated}
+                  user={user}
+                  canCreateEvent={canCreateEvent}
+                  selectedLocation={selectedLocation}
+                  onLocationChange={changeLocation}
+                />
+              </SheetContent>
+            </Sheet>
+
             <Link
               to="/"
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <img
-                src={appliedTheme === "dark" ? darkLogo : lightLogo}
+                src={isDark ? darkLogo : lightLogo}
                 alt="Ticket Bro"
-                className="h-7 w-auto"
+                className="h-6.5 w-auto"
               />
               <span
                 className="text-xl font-bold text-foreground hidden sm:inline"
@@ -274,7 +297,7 @@ const Header = () => {
 
             <div className="hidden md:block h-5 w-px bg-border" />
 
-            {/* Location selector — desktop */}
+            {/* Location selector — desktop only */}
             <div className="hidden md:block">
               <LocationSelector
                 selectedLocation={selectedLocation}
@@ -283,7 +306,7 @@ const Header = () => {
             </div>
           </div>
 
-          {/* CENTER: Search */}
+          {/* CENTER: Search — desktop only */}
           <div className="hidden md:block flex-1 max-w-xl">
             <form onSubmit={handleSearch}>
               <div className="relative">
@@ -326,7 +349,7 @@ const Header = () => {
               asChild
             >
               <Link to="/cart">
-                <ShoppingCart className="h-4 w-4" />
+                <ShoppingBag className="h-4 w-4" />
                 {itemCount > 0 && (
                   <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 bg-primary text-primary-foreground rounded-full text-[10px]">
                     {itemCount}
@@ -377,7 +400,7 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* ── UserMenu replaces the inline auth block ── */}
+            {/* User menu */}
             <UserMenu />
 
             {canCreateEvent && (
@@ -391,28 +414,6 @@ const Header = () => {
                 </Link>
               </Button>
             )}
-
-            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="md:hidden h-9 w-9"
-                >
-                  <Menu className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[280px] p-0">
-                <MobileMenuContent
-                  onClose={() => setIsMobileMenuOpen(false)}
-                  isAuthenticated={isAuthenticated}
-                  user={user}
-                  canCreateEvent={canCreateEvent}
-                  selectedLocation={selectedLocation}
-                  onLocationChange={changeLocation}
-                />
-              </SheetContent>
-            </Sheet>
           </div>
         </div>
 

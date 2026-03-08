@@ -131,6 +131,10 @@ const authSlice = createSlice({
       state.requiresTwoFactor = false;
       state.twoFactorEmail = null;
     },
+    updateUser: (state, action) => {
+      state.user = action.payload;
+      storageUtils.setUser(action.payload);
+    },
     setAuthFromOAuth: (state, action) => {
       const { user, accessToken, refreshToken } = action.payload;
       state.user = user;
@@ -228,10 +232,11 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, clearTwoFactor, setAuthFromOAuth } =
+export const { clearError, clearTwoFactor, setAuthFromOAuth, updateUser } =
   authSlice.actions;
 
 // ── Selectors ─────────────────────────────────────────────────────────────────
+
 export const selectUser = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectIsLoading = (state) => state.auth.isLoading;
