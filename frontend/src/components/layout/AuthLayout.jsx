@@ -3,93 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-// ── Animated ticket grid ──────────────────────────────────────────────────────
-const TicketGrid = () => (
-  <div
-    style={{
-      position: "absolute",
-      inset: 0,
-      overflow: "hidden",
-      pointerEvents: "none",
-    }}
-  >
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        gap: 20,
-        padding: 40,
-        opacity: 0.07,
-        transform: "rotate(-8deg) scale(1.25)",
-        transformOrigin: "center",
-      }}
-    >
-      {Array.from({ length: 28 }, (_, i) => (
-        <div
-          key={i}
-          style={{
-            height: 56,
-            borderRadius: 8,
-            border: "1.5px solid #a3e635",
-            position: "relative",
-            animation: `tf ${3 + (i % 4) * 0.6}s ease-in-out infinite alternate`,
-            animationDelay: `${(i * 0.13) % 1.8}s`,
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              left: "32%",
-              top: -5,
-              bottom: -5,
-              width: 1,
-              borderLeft: "1.5px dashed #a3e635",
-            }}
-          />
-        </div>
-      ))}
-    </div>
-    <style>{`@keyframes tf { from{transform:translateY(0);opacity:.5} to{transform:translateY(-10px);opacity:1} }`}</style>
-  </div>
-);
-
-// ── Glow orbs ─────────────────────────────────────────────────────────────────
-const Orbs = () => (
-  <div
-    style={{
-      position: "absolute",
-      inset: 0,
-      pointerEvents: "none",
-      overflow: "hidden",
-    }}
-  >
-    {[
-      { top: "12%", left: "18%", size: 300, delay: "0s" },
-      { bottom: "18%", right: "12%", size: 220, delay: "3s" },
-    ].map((o, i) => (
-      <div
-        key={i}
-        style={{
-          position: "absolute",
-          top: o.top,
-          left: o.left,
-          bottom: o.bottom,
-          right: o.right,
-          width: o.size,
-          height: o.size,
-          borderRadius: "50%",
-          background:
-            "radial-gradient(circle, rgba(163,230,53,0.13) 0%, transparent 70%)",
-          animation: `op 7s ease-in-out infinite ${i % 2 === 1 ? "reverse" : ""}`,
-          animationDelay: o.delay,
-        }}
-      />
-    ))}
-    <style>{`@keyframes op { 0%,100%{transform:scale(1);opacity:.6} 50%{transform:scale(1.18);opacity:1} }`}</style>
-  </div>
-);
-
-// ── Testimonials ──────────────────────────────────────────────────────────────
+// ── Data ──────────────────────────────────────────────────────────────────────
 const TESTIMONIALS = [
   {
     quote:
@@ -128,292 +42,142 @@ const AuthLayout = ({ children }) => {
     return () => clearInterval(id);
   }, []);
 
+  const t = TESTIMONIALS[tIdx];
+
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        fontFamily: "'DM Sans', system-ui, sans-serif",
-      }}
-    >
-      {/* ── LEFT — Branding ──────────────────────────────────────────────── */}
-      <div
-        style={{
-          background: "#0a0a0f",
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "40px 52px",
-          overflow: "hidden",
-        }}
-      >
-        <TicketGrid />
-        <Orbs />
-
-        {/* Logo */}
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <Link
-            to="/"
-            style={{
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            <div
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: 11,
-                background: "#a3e635",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 18,
-                fontWeight: 900,
-                color: "#000",
-                letterSpacing: "-1px",
-              }}
-            >
-              T
-            </div>
-            <span
-              style={{
-                fontSize: 17,
-                fontWeight: 800,
-                color: "#fff",
-                letterSpacing: "-0.4px",
-              }}
-            >
-              Ticket Bro
-            </span>
-          </Link>
-        </div>
-
-        {/* Center content */}
-        <div style={{ position: "relative", zIndex: 1 }}>
-          {/* Badge */}
-          <div
-            style={{
-              display: "inline-block",
-              background: "rgba(163,230,53,0.1)",
-              border: "1px solid rgba(163,230,53,0.25)",
-              borderRadius: 100,
-              padding: "4px 14px",
-              fontSize: 10,
-              letterSpacing: "2.5px",
-              color: "#a3e635",
-              fontWeight: 700,
-              marginBottom: 22,
-            }}
-          >
-            DISCOVER · BOOK · EXPERIENCE
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 font-sans">
+      {/* ══════════════════════════════════════════════════════════
+          MOBILE TOP BAR
+      ══════════════════════════════════════════════════════════ */}
+      <header className="md:hidden col-span-full flex items-center justify-between px-5 py-3 border-b border-border">
+        <Link to="/" className="inline-flex items-center gap-2 no-underline">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] border border-primary text-sm font-black text-primary font-brand">
+            T
           </div>
+          <span className="text-sm font-extrabold tracking-tight text-foreground font-brand">
+            Ticket<span className="text-primary">Bro</span>
+          </span>
+        </Link>
 
-          <h2
-            style={{
-              fontSize: "clamp(1.9rem, 3vw, 2.6rem)",
-              fontWeight: 900,
-              color: "#fff",
-              lineHeight: 1.1,
-              letterSpacing: "-1.5px",
-              marginBottom: 14,
-            }}
-          >
+        <div className="flex items-center gap-5">
+          {STATS.slice(0, 2).map(({ value, label }) => (
+            <div key={label} className="text-center">
+              <p className="text-xs font-black leading-none text-foreground font-heading">
+                {value}
+              </p>
+              <p className="mt-0.5 text-[8px] uppercase tracking-widest text-muted-foreground">
+                {label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </header>
+
+      {/* ══════════════════════════════════════════════════════════
+          LEFT — Branding panel (md+ only)
+      ══════════════════════════════════════════════════════════ */}
+      <aside className="hidden md:flex flex-col justify-between relative overflow-hidden border-r border-border p-10 lg:p-14">
+        {/* ── Logo ── */}
+        <Link to="/" className="inline-flex items-center gap-2.5 no-underline">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-primary text-lg font-black text-primary font-brand">
+            TB
+          </div>
+          <span className="text-base font-extrabold tracking-tight text-foreground font-brand">
+            Ticket<span className="text-primary">Bro</span>
+          </span>
+        </Link>
+
+        {/* ── Main copy ── */}
+        <div className="flex flex-col">
+          {/* Pill badge */}
+          <span className="mb-5 self-start rounded-full border border-primary/30 px-3.5 py-1 text-[9px] font-bold uppercase tracking-[2.5px] text-primary">
+            Discover · Book · Experience
+          </span>
+
+          {/* Headline */}
+          <h2 className="mb-3 font-black leading-[1.08] tracking-tight text-foreground font-heading text-3xl lg:text-4xl xl:text-5xl">
             Your next unforgettable
             <br />
-            <span style={{ color: "#a3e635" }}>experience</span> awaits.
+            <span className="text-primary">experience</span> awaits.
           </h2>
 
-          <p
-            style={{
-              fontSize: 13.5,
-              color: "rgba(255,255,255,0.4)",
-              lineHeight: 1.65,
-              maxWidth: 340,
-              marginBottom: 36,
-            }}
-          >
+          {/* Sub text */}
+          <p className="mb-8 max-w-xs text-sm leading-relaxed text-muted-foreground">
             Thousands of events. One platform. From underground gigs to stadium
             shows.
           </p>
 
           {/* Stats */}
-          <div style={{ display: "flex", gap: 36, marginBottom: 44 }}>
+          <div className="mb-9 flex flex-wrap gap-x-8 gap-y-3">
             {STATS.map(({ value, label }) => (
               <div key={label}>
-                <div
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 900,
-                    color: "#fff",
-                    letterSpacing: "-0.5px",
-                  }}
-                >
+                <p className="text-xl font-black tracking-tight text-foreground font-heading lg:text-2xl">
                   {value}
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(255,255,255,0.3)",
-                    letterSpacing: "1.5px",
-                    marginTop: 3,
-                  }}
-                >
-                  {label.toUpperCase()}
-                </div>
+                </p>
+                <p className="mt-0.5 text-[9px] uppercase tracking-widest text-muted-foreground">
+                  {label}
+                </p>
               </div>
             ))}
           </div>
 
-          {/* Testimonial card */}
-          <div
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 16,
-              padding: "20px 22px",
-              maxWidth: 380,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 28,
-                color: "#a3e635",
-                marginBottom: 8,
-                fontFamily: "Georgia, serif",
-                lineHeight: 1,
-              }}
-            >
+          {/* Testimonial — border only, zero fill */}
+          <div className="max-w-sm rounded-2xl border border-border px-5 py-[18px]">
+            <p className="mb-1.5 font-serif text-2xl leading-none text-primary">
               "
-            </div>
-            <p
-              style={{
-                fontSize: 13,
-                color: "rgba(255,255,255,0.65)",
-                lineHeight: 1.65,
-                marginBottom: 14,
-                minHeight: 42,
-                transition: "opacity 0.4s",
-              }}
-            >
-              {TESTIMONIALS[tIdx].quote}
             </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  background: "linear-gradient(135deg,#a3e635,#65a30d)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 11,
-                  fontWeight: 800,
-                  color: "#000",
-                }}
-              >
-                {TESTIMONIALS[tIdx].name[0]}
+            <p className="mb-3 min-h-[40px] text-xs leading-relaxed text-muted-foreground transition-opacity duration-300">
+              {t.quote}
+            </p>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary text-[10px] font-black text-primary">
+                {t.name[0]}
               </div>
               <div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "rgba(255,255,255,0.6)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {TESTIMONIALS[tIdx].name}
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(255,255,255,0.25)",
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  {TESTIMONIALS[tIdx].role}
-                </div>
+                <p className="text-[11px] font-semibold text-foreground">
+                  {t.name}
+                </p>
+                <p className="mt-0.5 text-[9px] tracking-wide text-muted-foreground">
+                  {t.role}
+                </p>
               </div>
             </div>
           </div>
 
           {/* Dots */}
-          <div style={{ display: "flex", gap: 6, marginTop: 16 }}>
+          <div className="mt-3.5 flex items-center gap-1.5">
             {TESTIMONIALS.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setTIdx(i)}
-                style={{
-                  width: i === tIdx ? 20 : 6,
-                  height: 6,
-                  borderRadius: 3,
-                  background: i === tIdx ? "#a3e635" : "rgba(255,255,255,0.15)",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 0,
-                  transition: "all 0.3s",
-                }}
+                aria-label={`Testimonial ${i + 1}`}
+                className={`h-[5px] rounded-full border-0 p-0 cursor-pointer transition-all duration-300 outline-none
+                  ${i === tIdx ? "w-4 bg-primary" : "w-[5px] bg-border hover:bg-muted-foreground"}`}
               />
             ))}
           </div>
         </div>
 
         {/* Footer links */}
-        <div
-          style={{ position: "relative", zIndex: 1, display: "flex", gap: 20 }}
-        >
+        <footer className="flex flex-wrap gap-x-5 gap-y-1">
           {["Privacy", "Terms", "Help"].map((l) => (
             <Link
               key={l}
               to={`/${l.toLowerCase()}`}
-              style={{
-                fontSize: 11,
-                color: "rgba(255,255,255,0.22)",
-                textDecoration: "none",
-                letterSpacing: "0.3px",
-                transition: "color 0.2s",
-              }}
-              onMouseEnter={(e) =>
-                (e.target.style.color = "rgba(255,255,255,0.5)")
-              }
-              onMouseLeave={(e) =>
-                (e.target.style.color = "rgba(255,255,255,0.22)")
-              }
+              className="text-[10px] tracking-wide text-muted-foreground no-underline transition-colors duration-200 hover:text-foreground"
             >
               {l}
             </Link>
           ))}
-        </div>
-      </div>
+        </footer>
+      </aside>
 
-      {/* ── RIGHT — Page content ─────────────────────────────────────────── */}
-      <div
-        style={{
-          background: "var(--background, #ffffff)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "48px 40px",
-          overflowY: "auto",
-          minHeight: "100vh",
-        }}
-      >
-        <div style={{ width: "100%", maxWidth: 440 }}>{children}</div>
-      </div>
-
-      {/* Responsive */}
-      <style>{`
-        @media (max-width: 768px) {
-          div[data-auth-layout] { grid-template-columns: 1fr !important; }
-          div[data-auth-panel]  { display: none !important; }
-        }
-      `}</style>
+      {/* ══════════════════════════════════════════════════════════
+          RIGHT — Form / children
+      ══════════════════════════════════════════════════════════ */}
+      <main className="flex flex-col items-center justify-center overflow-y-auto min-h-[calc(100vh-52px)] md:min-h-screen px-5 py-10 sm:px-10 sm:py-14">
+        <div className="w-full max-w-[420px]">{children}</div>
+      </main>
     </div>
   );
 };

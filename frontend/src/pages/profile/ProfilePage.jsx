@@ -1,6 +1,6 @@
 // frontend/src/pages/profile/ProfilePage.jsx
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -20,80 +20,15 @@ import {
   Ticket,
   CreditCard,
   Camera,
-  Trash2,
-  Settings,
 } from "lucide-react";
 import {
   fetchProfile,
-  uploadAvatar,
-  removeAvatar,
   selectProfile,
   selectUserLoading,
-  selectUploading,
 } from "@/store/slices/userSlice";
 import { logoutUser } from "@/store/slices/authSlice";
+import AvatarUpload from "@/components/user/AvatarUpload";
 import { ROUTES } from "@/app/AppRoutes";
-
-// ── Avatar ────────────────────────────────────────────────────────────────────
-const Avatar = ({ user, isUploading, onUpload, onRemove }) => {
-  const ref = useRef();
-  const initials =
-    `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase();
-
-  return (
-    <div className="relative group">
-      {/* Image or initials */}
-      <div className="w-24 h-24 rounded-2xl overflow-hidden ring-2 ring-border ring-offset-2 ring-offset-background">
-        {user.avatar ? (
-          <img
-            src={user.avatar}
-            alt={user.fullName}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center text-3xl font-extrabold text-black font-heading"
-            style={{ background: "linear-gradient(135deg, #a3e635, #65a30d)" }}
-          >
-            {initials}
-          </div>
-        )}
-      </div>
-
-      {/* Overlay on hover */}
-      <div className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
-        <button
-          onClick={() => ref.current?.click()}
-          className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
-          title="Upload photo"
-        >
-          {isUploading ? (
-            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <Camera size={14} className="text-white" />
-          )}
-        </button>
-        {user.avatar && (
-          <button
-            onClick={onRemove}
-            className="w-8 h-8 rounded-lg bg-white/20 hover:bg-red-500/60 flex items-center justify-center transition-colors"
-            title="Remove photo"
-          >
-            <Trash2 size={13} className="text-white" />
-          </button>
-        )}
-      </div>
-
-      <input
-        ref={ref}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
-      />
-    </div>
-  );
-};
 
 // ── Role badge ────────────────────────────────────────────────────────────────
 const RoleBadge = ({ role }) => {
@@ -105,7 +40,7 @@ const RoleBadge = ({ role }) => {
   };
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase border font-heading ${styles[role] ?? styles.user}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase border font-heading ${styles[role] ?? styles.user}`}
     >
       {role}
     </span>
@@ -120,11 +55,13 @@ const InfoRow = ({ icon: Icon, label, value }) => {
       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
         <Icon size={14} className="text-primary" />
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-[11px] text-muted-foreground mb-0.5 uppercase tracking-wide font-medium">
           {label}
         </p>
-        <p className="text-sm font-medium text-foreground truncate">{value}</p>
+        <p className="text-sm font-medium text-foreground break-words">
+          {value}
+        </p>
       </div>
     </div>
   );
@@ -132,7 +69,9 @@ const InfoRow = ({ icon: Icon, label, value }) => {
 
 // ── Card ──────────────────────────────────────────────────────────────────────
 const Card = ({ children, className = "" }) => (
-  <div className={`bg-card border border-border rounded-2xl p-5 ${className}`}>
+  <div
+    className={`bg-card border border-border rounded-2xl p-4 sm:p-5 ${className}`}
+  >
     {children}
   </div>
 );
@@ -148,15 +87,15 @@ const CardHeader = ({ title, action }) => (
 const NavItem = ({ to, icon: Icon, label, desc, color, onClick, danger }) => {
   const inner = (
     <div
-      className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors cursor-pointer
-      ${danger ? "hover:bg-destructive/5" : "hover:bg-muted"}`}
+      className={`flex items-center gap-3 px-3 py-2.5 sm:py-3 rounded-xl transition-colors cursor-pointer
+      ${danger ? "hover:bg-destructive/5 active:bg-destructive/10" : "hover:bg-muted active:bg-muted/80"}`}
     >
       <div
-        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0
+        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0
         ${danger ? "bg-destructive/10" : "bg-muted"}`}
       >
         <Icon
-          size={16}
+          size={15}
           className={
             danger ? "text-destructive" : color || "text-muted-foreground"
           }
@@ -169,7 +108,9 @@ const NavItem = ({ to, icon: Icon, label, desc, color, onClick, danger }) => {
           {label}
         </p>
         {desc && (
-          <p className="text-xs text-muted-foreground truncate">{desc}</p>
+          <p className="text-xs text-muted-foreground truncate hidden sm:block">
+            {desc}
+          </p>
         )}
       </div>
       <ChevronRight size={14} className="text-muted-foreground shrink-0" />
@@ -184,21 +125,25 @@ const NavItem = ({ to, icon: Icon, label, desc, color, onClick, danger }) => {
   );
 };
 
-// ── Skeleton loader ───────────────────────────────────────────────────────────
+// ── Skeleton ──────────────────────────────────────────────────────────────────
 const Skeleton = () => (
-  <div className="max-w-2xl mx-auto px-4 py-6 space-y-4 animate-pulse">
-    <div className="bg-card border border-border rounded-2xl p-5">
-      <div className="flex items-start gap-5">
-        <div className="w-24 h-24 rounded-2xl bg-muted" />
-        <div className="flex-1 space-y-3">
-          <div className="h-5 bg-muted rounded-lg w-40" />
-          <div className="h-3.5 bg-muted rounded-lg w-64" />
-          <div className="h-8 bg-muted rounded-lg w-28" />
+  <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-3 sm:space-y-4 animate-pulse">
+    <div className="bg-card border border-border rounded-2xl p-4 sm:p-5">
+      {/* Mobile: stacked, Desktop: side-by-side */}
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
+        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-muted shrink-0" />
+        <div className="flex-1 w-full space-y-3">
+          <div className="h-5 bg-muted rounded-lg w-40 mx-auto sm:mx-0" />
+          <div className="h-3.5 bg-muted rounded-lg w-48 mx-auto sm:mx-0" />
+          <div className="h-8 bg-muted rounded-lg w-28 mx-auto sm:mx-0" />
         </div>
       </div>
     </div>
     {[1, 2, 3].map((i) => (
-      <div key={i} className="bg-card border border-border rounded-2xl p-5">
+      <div
+        key={i}
+        className="bg-card border border-border rounded-2xl p-4 sm:p-5"
+      >
         <div className="h-4 bg-muted rounded w-32 mb-4" />
         <div className="space-y-3">
           {[1, 2].map((j) => (
@@ -216,7 +161,7 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const profile = useSelector(selectProfile);
   const isLoading = useSelector(selectUserLoading);
-  const uploading = useSelector(selectUploading);
+  const [showAvatarUpload, setShowAvatarUpload] = useState(false);
 
   useEffect(() => {
     dispatch(fetchProfile());
@@ -232,6 +177,7 @@ const ProfilePage = () => {
   ]
     .filter(Boolean)
     .join(", ");
+
   const dob = profile.dateOfBirth
     ? new Date(profile.dateOfBirth).toLocaleDateString("en-GB", {
         day: "numeric",
@@ -241,27 +187,51 @@ const ProfilePage = () => {
     : null;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-4 font-sans">
+    <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-3 sm:space-y-4 font-sans pb-8">
       {/* ── Hero card ─────────────────────────────────────────────────────── */}
       <Card>
-        <div className="flex items-start gap-5 flex-wrap">
-          <Avatar
-            user={profile}
-            isUploading={uploading}
-            onUpload={(file) => dispatch(uploadAvatar(file))}
-            onRemove={() => dispatch(removeAvatar())}
-          />
+        {/* Mobile: centered column | sm+: row */}
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
+          {/* Avatar */}
+          <div className="relative shrink-0">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden ring-2 ring-border ring-offset-2 ring-offset-background">
+              {profile.avatar ? (
+                <img
+                  src={profile.avatar}
+                  alt={`${profile.firstName} ${profile.lastName}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center text-2xl sm:text-3xl font-extrabold text-black font-heading"
+                  style={{
+                    background: "linear-gradient(135deg, #a3e635, #65a30d)",
+                  }}
+                >
+                  {`${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`.toUpperCase()}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => setShowAvatarUpload(true)}
+              className="absolute -bottom-2 -right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 active:scale-95 transition-all"
+              title="Change avatar"
+            >
+              <Camera size={13} />
+            </button>
+          </div>
 
-          <div className="flex-1 min-w-0">
+          {/* Info */}
+          <div className="flex-1 min-w-0 w-full text-center sm:text-left">
             {/* Name + badges */}
-            <div className="flex items-center gap-2 flex-wrap mb-1.5">
-              <h1 className="text-xl font-extrabold tracking-tight text-foreground font-heading leading-tight">
+            <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap mb-1">
+              <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-foreground font-heading leading-tight">
                 {profile.firstName} {profile.lastName}
               </h1>
               <RoleBadge role={profile.role} />
               {profile.isEmailVerified && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 size={12} /> Verified
+                  <CheckCircle2 size={11} /> Verified
                 </span>
               )}
             </div>
@@ -272,27 +242,36 @@ const ProfilePage = () => {
             </p>
 
             {/* Bio */}
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-2">
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-2 hidden sm:block">
               {profile.bio || "No bio added yet. Tell people about yourself."}
             </p>
 
             {/* Actions */}
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap justify-center sm:justify-start">
               <Link
                 to={ROUTES.PROFILE.EDIT}
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-primary text-black text-xs font-bold font-heading no-underline hover:brightness-110 active:brightness-95 transition-all"
+                className="inline-flex items-center gap-1.5 h-8 px-3 sm:px-3.5 rounded-lg bg-primary text-black text-xs font-bold font-heading no-underline hover:brightness-110 active:brightness-95 transition-all"
               >
-                <Edit3 size={12} /> Edit profile
+                <Edit3 size={12} />
+                <span>Edit profile</span>
               </Link>
               <Link
                 to={ROUTES.PROFILE.CHANGE_PASSWORD}
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border bg-card text-foreground text-xs font-semibold no-underline hover:border-primary/40 hover:bg-primary/5 transition-all"
+                className="inline-flex items-center gap-1.5 h-8 px-3 sm:px-3.5 rounded-lg border border-border bg-card text-foreground text-xs font-semibold no-underline hover:border-primary/40 hover:bg-primary/5 transition-all"
               >
-                <Key size={12} /> Password
+                <Key size={12} />
+                <span>Password</span>
               </Link>
             </div>
           </div>
         </div>
+
+        {/* Bio visible on mobile below the row */}
+        {(profile.bio || true) && (
+          <p className="text-sm text-muted-foreground leading-relaxed mt-3 line-clamp-3 sm:hidden">
+            {profile.bio || "No bio added yet. Tell people about yourself."}
+          </p>
+        )}
       </Card>
 
       {/* ── Personal info ─────────────────────────────────────────────────── */}
@@ -357,14 +336,14 @@ const ProfilePage = () => {
       {/* ── Security ──────────────────────────────────────────────────────── */}
       <Card>
         <CardHeader title="Security" />
-        <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 mb-3">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 mb-3 gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div
-              className={`w-9 h-9 rounded-xl flex items-center justify-center
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0
               ${profile.isTwoFactorEnabled ? "bg-emerald-500/10" : "bg-muted"}`}
             >
               <Shield
-                size={16}
+                size={15}
                 className={
                   profile.isTwoFactorEnabled
                     ? "text-emerald-500"
@@ -372,11 +351,11 @@ const ProfilePage = () => {
                 }
               />
             </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground font-heading">
-                Two-factor authentication
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground font-heading truncate">
+                Two-factor auth
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground truncate hidden sm:block">
                 {profile.isTwoFactorEnabled
                   ? "Your account is protected"
                   : "Add extra security to your account"}
@@ -384,7 +363,7 @@ const ProfilePage = () => {
             </div>
           </div>
           <span
-            className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider
+            className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider shrink-0
             ${
               profile.isTwoFactorEnabled
                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
@@ -397,8 +376,8 @@ const ProfilePage = () => {
 
         {profile.lastLoginAt && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
-            <Clock size={12} />
-            <span>
+            <Clock size={12} className="shrink-0" />
+            <span className="truncate">
               Last sign in:{" "}
               {new Date(profile.lastLoginAt).toLocaleString("en-GB", {
                 dateStyle: "medium",
@@ -421,6 +400,13 @@ const ProfilePage = () => {
           }
         />
       </Card>
+
+      {/* Avatar Upload Dialog */}
+      <AvatarUpload
+        user={profile}
+        open={showAvatarUpload}
+        onOpenChange={setShowAvatarUpload}
+      />
     </div>
   );
 };
