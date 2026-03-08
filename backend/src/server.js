@@ -24,12 +24,11 @@ const startServer = async () => {
     server = app.listen(env.PORT, () => {
       logger.info(`
 ╔══════════════════════════════════════════════════════════╗
-║              🚀 Auth Backend Server Started              ║
+║                  Backend Server Started                  ║
 ╠══════════════════════════════════════════════════════════╣
-║  Environment : ${env.NODE_ENV.padEnd(41)}║
-║  Port        : ${String(env.PORT).padEnd(41)}║
-║  API Prefix  : ${`${env.API_PREFIX}/${env.API_VERSION}`.padEnd(41)}║
-║  Auth API    : ${`${env.BACKEND_URL}${env.API_PREFIX}/${env.API_VERSION}/auth`.padEnd(41)}║
+║  Environment : ${env.NODE_ENV.padEnd(41)} ║
+║  Port        : ${String(env.PORT).padEnd(41)} ║
+║  API Prefix  : ${`${env.API_PREFIX}/${env.API_VERSION}`.padEnd(41)} ║
 ╚══════════════════════════════════════════════════════════╝
       `);
     });

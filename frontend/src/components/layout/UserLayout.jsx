@@ -1,17 +1,23 @@
-import Footer from "@/components/layout/Footer";
-import Header from "@/components/layout/Header";
+// frontend/src/components/layout/UserLayout.jsx
+// Minimal layout for user pages
+
 import React from "react";
 import { Outlet } from "react-router-dom";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 
-const MainLayout = () => {
+const UserLayout = () => {
   return (
-    <div>
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="min-h-screen">
+
+      <main className="flex-1 w-full">
         <Outlet />
       </main>
+
       <Footer />
     </div>
   );
 };
-export default MainLayout;
+
+export default UserLayout;

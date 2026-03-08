@@ -1,9 +1,126 @@
-"use strict";
+'use strict';
 
-const express = require("express");
+// admin.routes.js
+// NOTE: authenticate + authorize(ROLES.ADMIN) are applied in routes.js
+// before this router is mounted — do NOT re-apply here.
+
+const express = require('express');
 const router = express.Router();
 
-// Placeholder routes - implement controllers later
-router.get("/", (req, res) => res.json({ message: "Admins endpoint" }));
+const { authorize } = require('../../common/middleware/auth.middleware');
+const { ROLES } = require('../../common/constants/roles');
+
+let _ctrl;
+const ctrl = () => { if (!_ctrl) _ctrl = require('./admin.controller'); return _ctrl; };
+
+// ── Dashboard & System ────────────────────────────────────────────────────────
+// GET /admin/dashboard
+router.get('/dashboard',        (req, res, next) => ctrl().getDashboard(req, res, next));
+
+// GET /admin/system/health
+router.get('/system/health',    (req, res, next) => ctrl().getSystemHealth(req, res, next));
+
+// GET /admin/system/metrics
+router.get('/system/metrics',   (req, res, next) => ctrl().getSystemMetrics(req, res, next));
+
+// ── Feature Flags ─────────────────────────────────────────────────────────────
+// GET  /admin/feature-flags
+router.get('/feature-flags',    (req, res, next) => ctrl().getFeatureFlags(req, res, next));
+
+// PUT  /admin/feature-flags
+router.put('/feature-flags',    (req, res, next) => ctrl().updateFeatureFlags(req, res, next));
+
+// ── User Management ───────────────────────────────────────────────────────────
+// GET    /admin/users
+router.get('/users',                    (req, res, next) => ctrl().getAllUsers(req, res, next));
+
+// GET    /admin/users/:id
+router.get('/users/:id',                (req, res, next) => ctrl().getUserById(req, res, next));
+
+// PATCH  /admin/users/:id
+router.patch('/users/:id',              (req, res, next) => ctrl().updateUser(req, res, next));
+
+// DELETE /admin/users/:id
+router.delete('/users/:id',             (req, res, next) => ctrl().deleteUser(req, res, next));
+
+// PATCH  /admin/users/:id/ban
+router.patch('/users/:id/ban',          (req, res, next) => ctrl().banUser(req, res, next));
+
+// PATCH  /admin/users/:id/unban
+router.patch('/users/:id/unban',        (req, res, next) => ctrl().unbanUser(req, res, next));
+
+// PATCH  /admin/users/:id/role
+router.patch('/users/:id/role',
+  authorize(ROLES.SUPER_ADMIN),         // Only SUPER_ADMIN can change roles
+  (req, res, next) => ctrl().changeUserRole(req, res, next));
+
+// ── Organizer Management ──────────────────────────────────────────────────────
+// GET    /admin/organizers
+router.get('/organizers',               (req, res, next) => ctrl().getAllOrganizers(req, res, next));
+
+// GET    /admin/organizers/:id
+router.get('/organizers/:id',           (req, res, next) => ctrl().getOrganizerById(req, res, next));
+
+// PUT    /admin/organizers/:id/verify
+router.put('/organizers/:id/verify',    (req, res, next) => ctrl().verifyOrganizer(req, res, next));
+
+// PUT    /admin/organizers/:id/reject
+router.put('/organizers/:id/reject',    (req, res, next) => ctrl().rejectOrganizer(req, res, next));
+
+// PUT    /admin/organizers/:id/suspend
+router.put('/organizers/:id/suspend',   (req, res, next) => ctrl().suspendOrganizer(req, res, next));
+
+// ── Bookings ──────────────────────────────────────────────────────────────────
+// GET    /admin/bookings
+router.get('/bookings',                 (req, res, next) => ctrl().getAllBookings(req, res, next));
+
+// PUT    /admin/bookings/:ref/cancel
+router.put('/bookings/:ref/cancel',     (req, res, next) => ctrl().cancelBooking(req, res, next));
+
+// PUT    /admin/bookings/:ref/refund
+router.put('/bookings/:ref/refund',     (req, res, next) => ctrl().refundBooking(req, res, next));
+
+// ── Payments ──────────────────────────────────────────────────────────────────
+// GET    /admin/payments
+router.get('/payments',                 (req, res, next) => ctrl().getAllPayments(req, res, next));
+
+// GET    /admin/payments/:id
+router.get('/payments/:id',             (req, res, next) => ctrl().getPaymentById(req, res, next));
+
+// POST   /admin/payments/:id/refund
+router.post('/payments/:id/refund',     (req, res, next) => ctrl().refundPayment(req, res, next));
+
+// ── Reviews ───────────────────────────────────────────────────────────────────
+// GET    /admin/reviews
+router.get('/reviews',                  (req, res, next) => ctrl().getAllReviews(req, res, next));
+
+// DELETE /admin/reviews/:id
+router.delete('/reviews/:id',           (req, res, next) => ctrl().deleteReview(req, res, next));
+
+// PUT    /admin/reviews/:id/flag
+router.put('/reviews/:id/flag',         (req, res, next) => ctrl().flagReview(req, res, next));
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+// GET /admin/analytics/overview
+router.get('/analytics/overview',       (req, res, next) => ctrl().getAnalyticsOverview(req, res, next));
+
+// GET /admin/analytics/revenue
+router.get('/analytics/revenue',        (req, res, next) => ctrl().getRevenueAnalytics(req, res, next));
+
+// GET /admin/analytics/users
+router.get('/analytics/users',          (req, res, next) => ctrl().getUserAnalytics(req, res, next));
+
+// GET /admin/analytics/events
+router.get('/analytics/events',         (req, res, next) => ctrl().getEventAnalytics(req, res, next));
+
+// GET /admin/analytics/organizers
+router.get('/analytics/organizers',     (req, res, next) => ctrl().getOrganizerAnalytics(req, res, next));
+
+// ── Promotions ────────────────────────────────────────────────────────────────
+// GET /admin/promotions
+router.get('/promotions',               (req, res, next) => ctrl().getAllPromotions(req, res, next));
+
+// PUT /admin/promotions/:id/disable
+router.put('/promotions/:id/disable',   (req, res, next) => ctrl().disablePromotion(req, res, next));
 
 module.exports = router;
