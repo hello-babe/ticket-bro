@@ -11,7 +11,7 @@ const cookieParser = require("cookie-parser");
 
 const env = require("./config/env");
 const { globalLimiter } = require("./config/rateLimit.config");
-const authRoutes = require("./modules/auth/auth.routes");
+const routes = require("./routes"); // ← your main routes.js
 const {
   errorHandler,
   notFound,
@@ -51,6 +51,14 @@ app.use(
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
 app.use(globalLimiter);
 
+// ── Webhook Raw Body (MUST come before express.json) ─────────────────────────
+// Stripe/Razorpay/PayPal require the raw body for signature verification
+const API_PREFIX = `${env.API_PREFIX}/${env.API_VERSION}`;
+app.use(
+  `${API_PREFIX}/webhooks`,
+  express.raw({ type: "application/json" }),
+);
+
 // ── Body Parsing ──────────────────────────────────────────────────────────────
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
@@ -85,8 +93,8 @@ app.get("/health", (req, res) => {
 });
 
 // ── API Routes ────────────────────────────────────────────────────────────────
-const API_PREFIX = `${env.API_PREFIX}/${env.API_VERSION}`;
-app.use(`${API_PREFIX}/auth`, authRoutes);
+// All routes defined in routes.js are now mounted under /api/v1
+app.use(API_PREFIX, routes);
 
 // ── 404 Handler ───────────────────────────────────────────────────────────────
 app.use(notFound);
