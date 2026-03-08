@@ -1,10 +1,9 @@
 // frontend/src/services/userService.js
-// All user/profile API calls — consumed by userSlice thunks
 
-import api from "@/api/api"; // your existing axios instance (authApi.js)
+import api from "@/api/api";
 
 const userService = {
-  // ── Current user ──────────────────────────────────────────────────────────
+  // ── Current user ─────────────────────────────────────────────────────────
   getMe: () => api.get("/users/me"),
   updateMe: (data) => api.patch("/users/me", data),
   deleteMe: () => api.delete("/users/me"),
