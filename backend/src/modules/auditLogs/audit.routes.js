@@ -1,9 +1,10 @@
-"use strict";
-
-const express = require("express");
+'use strict';
+const express = require('express');
 const router = express.Router();
+let _c; const c = () => { if (!_c) _c = require('./audit.controller'); return _c; };
 
-// Placeholder routes - implement controllers later
-router.get("/", (req, res) => res.json({ message: "Audit logs endpoint" }));
-
+// authenticate + authorize(ADMIN) applied in routes.js
+router.get('/',              (req,res,next) => c().getLogs(req,res,next));
+router.get('/user/:userId',  (req,res,next) => c().getByUser(req,res,next));
+router.get('/:id',           (req,res,next) => c().getById(req,res,next));
 module.exports = router;

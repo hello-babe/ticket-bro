@@ -15,10 +15,11 @@ import {
   PlusCircle,
   Clock,
   TrendingUp,
-  Bell
+  Bell,
+  ChevronDown,
 } from 'lucide-react';
 
-import useAuth from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -35,11 +36,12 @@ import Header from '@/components/layout/Header';
 
 const OrganizerLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { user, logout, hasRole } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
 
-  // Check if user has organizer access
-  if (!hasRole('organizer') && !hasRole('admin')) {
+  // Guard: ProtectedRoute in AppRoutes already enforces organizer/admin role,
+  // but we add a safety net here too.
+  if (!user || !['organizer', 'admin', 'super_admin'].includes(user?.role)) {
     return <Navigate to="/403" replace />;
   }
 

@@ -70,25 +70,9 @@ const handleUpload = (req, res, next) => {
   });
 };
 
-// ── Try to load authorize from common middleware ──────────────────────────────
-let authorize;
-try {
-  ({ authorize } = require("../../common/middleware/auth.middleware"));
-} catch {
-  authorize =
-    (...roles) =>
-    (req, res, next) => {
-      if (!req.user)
-        return res
-          .status(401)
-          .json({ status: "fail", message: "Not authenticated." });
-      if (!roles.includes(req.user.role))
-        return res
-          .status(403)
-          .json({ status: "fail", message: "Access denied." });
-      next();
-    };
-}
+// ── Load authorize and ROLES ──────────────────────────────────────────────────
+const { authorize } = require("../../common/middleware/auth.middleware");
+const { ROLES } = require("../../common/constants/roles");
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CURRENT USER  —  /api/v1/users/me
@@ -108,7 +92,8 @@ router.delete("/me/sessions/:sessionId", userController.revokeSession);
 // ══════════════════════════════════════════════════════════════════════════════
 // ADMIN  —  /api/v1/users
 // ══════════════════════════════════════════════════════════════════════════════
-router.use(authorize("admin"));
+// FIX: was hardcoded "admin" string — now uses the ROLES constant
+router.use(authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN));
 
 router.get("/stats", userController.getUserStats); // must be before /:userId
 router.get("/", userController.getAllUsers);

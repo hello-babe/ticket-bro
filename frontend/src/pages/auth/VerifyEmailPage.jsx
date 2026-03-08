@@ -58,7 +58,7 @@ const VerifyEmailPage = () => {
   // ── Notice — shown right after register ────────────────────────────────────
   if (status === STATUS.NOTICE) {
     return (
-      <AuthLayout>
+      <AuthLayout public>
         <StatusCard
           icon={<MailCheck size={30} style={{ color: "#a3e635" }} />}
           iconBg="rgba(163,230,53,0.1)"
@@ -143,7 +143,7 @@ const VerifyEmailPage = () => {
   // ── Loading ────────────────────────────────────────────────────────────────
   if (status === STATUS.LOADING) {
     return (
-      <AuthLayout>
+      <AuthLayout public>
         <div style={{ textAlign: "center" }}>
           <div
             style={{
@@ -188,7 +188,7 @@ const VerifyEmailPage = () => {
   // ── Success ────────────────────────────────────────────────────────────────
   if (status === STATUS.SUCCESS) {
     return (
-      <AuthLayout>
+      <AuthLayout public>
         <StatusCard
           icon={<CheckCircle2 size={30} style={{ color: "#22c55e" }} />}
           iconBg="rgba(34,197,94,0.1)"
@@ -224,7 +224,7 @@ const VerifyEmailPage = () => {
 
   // ── Error ──────────────────────────────────────────────────────────────────
   return (
-    <AuthLayout>
+    <AuthLayout public>
       <StatusCard
         icon={<MailX size={28} style={{ color: "#ef4444" }} />}
         iconBg="rgba(239,68,68,0.1)"
