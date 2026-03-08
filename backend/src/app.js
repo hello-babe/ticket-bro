@@ -24,17 +24,26 @@ require("./modules/auth/strategies/passport");
 
 const app = express();
 
-// ── Security Middleware ───────────────────────────────────────────────────────
+// ── Trust Proxy ───────────────────────────────────────────────────────────────
+// MUST be FIRST — before rate limiter, CORS, and cookieParser.
+// Without this, req.ip is the proxy IP (127.0.0.1 in all envs), which means:
+//   • All users share one rate-limit bucket → 5 failed logins = 429 for everyone
+//   • Secure cookies may not be set correctly behind a load balancer
+// In production: trust exactly 1 hop (the load balancer / reverse proxy).
+// In development: still set it so req.ip resolves to the real local IP.
+app.set('trust proxy', env.isProduction() ? 1 : false);
+
+// ── Security Headers ──────────────────────────────────────────────────────────
 app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
     contentSecurityPolicy: env.isProduction(),
-    // ✅ FIX 1: Allow cross-origin image loading (avatar images)
-    // Default is "same-origin" which blocks localhost:5173 → localhost:5000
+    // Allow cross-origin image loads (avatar images from different port in dev)
     crossOriginResourcePolicy: { policy: "cross-origin" },
   }),
 );
 
+// ── CORS ──────────────────────────────────────────────────────────────────────
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -51,7 +60,8 @@ app.use(
   }),
 );
 
-// ── Rate Limiting ─────────────────────────────────────────────────────────────
+// ── Global Rate Limiting ──────────────────────────────────────────────────────
+// Applied AFTER trust proxy so req.ip is the real client IP.
 app.use(globalLimiter);
 
 // ── Webhook Raw Body ──────────────────────────────────────────────────────────
@@ -75,11 +85,6 @@ if (!env.isTest()) {
   app.use(morgan("combined", { stream: logger.stream }));
 }
 
-// ── Trust Proxy ───────────────────────────────────────────────────────────────
-if (env.isProduction()) {
-  app.set("trust proxy", 1);
-}
-
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get("/health", (req, res) => {
   res.status(200).json({
@@ -95,8 +100,6 @@ app.get("/health", (req, res) => {
 app.use(API_PREFIX, routes);
 
 // ── Static Files ──────────────────────────────────────────────────────────────
-// ✅ FIX 2: Set Cross-Origin-Resource-Policy header before serving static files
-// Without this, browsers block cross-origin image loads even if CORS is fine
 app.use(
   "/uploads",
   (req, res, next) => {
