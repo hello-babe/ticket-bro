@@ -1,27 +1,27 @@
 // frontend/src/pages/auth/OAuthSuccessPage.jsx
-import React, { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { XCircle } from "lucide-react";
-import { setAuthFromOAuth } from "@/store/slices/authSlice";
-import { storageUtils } from "@/utils/storageUtils";
-import authService from "@/services/authService";
-import { ROUTES } from "@/app/AppRoutes";
+import React, { useEffect, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { XCircle } from 'lucide-react';
+import { setAuthFromOAuth } from '@/store/slices/authSlice';
+import { storageUtils } from '@/utils/storageUtils';
+import authService from '@/services/authService';
+import { ROUTES } from '@/app/AppRoutes';
 
-import Container from "@/components/layout/Container";
-import { PageLoader } from "@/components/shared/Loader";
+import Container from '@/components/layout/Container';
+import { PageLoader } from '@/components/shared/Loader';
 
 const OAuthSuccessPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const token = searchParams.get("token");
+    const token = searchParams.get('token');
 
     if (!token) {
-      setError("OAuth login failed — no token received. Please try again.");
+      setError('OAuth login failed — no token received. Please try again.');
       return;
     }
 
@@ -29,32 +29,36 @@ const OAuthSuccessPage = () => {
 
     const hydrate = async () => {
       try {
-        // Store access token
+        // FIX: Remove the access token from the URL immediately.
+        // Leaving it in the URL exposes it in browser history, server logs,
+        // and the Referer header of any subsequent navigation.
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        // Store in-memory access token
         storageUtils.setAccessToken(token);
 
-        // Fetch full user profile
+        // Fetch full user profile using the new access token
         const res = await authService.getMe();
         const user = res.data.data;
 
         if (cancelled) return;
 
-        // Hydrate Redux
+        // Hydrate Redux — refresh token is already in httpOnly cookie
         dispatch(
           setAuthFromOAuth({
             user,
             accessToken: token,
-            refreshToken: storageUtils.getRefreshToken() || "",
+            // FIX: don't pass refreshToken — it's in the httpOnly cookie, not JS-accessible
           }),
         );
 
-        // Redirect home
         navigate(ROUTES.HOME, { replace: true });
       } catch (err) {
         if (!cancelled) {
           storageUtils.clearAll();
           setError(
             err.response?.data?.message ||
-              "Failed to complete sign in. Please try again.",
+              'Failed to complete sign in. Please try again.',
           );
         }
       }
@@ -67,7 +71,6 @@ const OAuthSuccessPage = () => {
   }, []); // eslint-disable-line
 
   if (!error) {
-    // Show full-page loader while authenticating
     return (
       <PageLoader
         text="Signing you in…"
@@ -76,7 +79,6 @@ const OAuthSuccessPage = () => {
     );
   }
 
-  // Show error UI if something went wrong
   return (
     <Container>
       <div className="flex flex-col items-center justify-center text-center py-16">
