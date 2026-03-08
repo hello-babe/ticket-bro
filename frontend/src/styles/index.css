@@ -3,8 +3,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import url("./animations.css");
-@import url("./container.css");
 
 @custom-variant dark (&:is(.dark *));
 
