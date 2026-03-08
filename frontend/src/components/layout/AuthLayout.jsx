@@ -1,9 +1,7 @@
 // frontend/src/layouts/AuthLayout.jsx
 
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuthContext } from "@/context/AuthContext"; // ✅ use context
-import authConfig from "@/config/auth.config"; // ✅ for routes
+import { Link } from "react-router-dom";
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const TESTIMONIALS = [
@@ -35,16 +33,6 @@ const STATS = [
 // ── Layout ────────────────────────────────────────────────────────────────────
 const AuthLayout = ({ children }) => {
   const [tIdx, setTIdx] = useState(0);
-  const navigate = useNavigate();
-
-  const { isAuthenticated, isLoading } = useAuthContext(); // ✅ context state
-
-  // ── Redirect authenticated users ────────────────────────────────────────────
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      navigate(authConfig.routes.home, { replace: true });
-    }
-  }, [isAuthenticated, isLoading, navigate]);
 
   useEffect(() => {
     const id = setInterval(
@@ -58,7 +46,9 @@ const AuthLayout = ({ children }) => {
 
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 font-sans">
-      {/* MOBILE TOP BAR */}
+      {/* ══════════════════════════════════════════════════════════
+          MOBILE TOP BAR
+      ══════════════════════════════════════════════════════════ */}
       <header className="md:hidden col-span-full flex items-center justify-between px-5 py-3 border-b border-border">
         <Link to="/" className="inline-flex items-center gap-2 no-underline">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] border border-primary text-sm font-black text-primary font-brand">
@@ -83,8 +73,11 @@ const AuthLayout = ({ children }) => {
         </div>
       </header>
 
-      {/* LEFT PANEL */}
+      {/* ══════════════════════════════════════════════════════════
+          LEFT — Branding panel (md+ only)
+      ══════════════════════════════════════════════════════════ */}
       <aside className="hidden md:flex flex-col justify-between relative overflow-hidden border-r border-border p-10 lg:p-14">
+        {/* ── Logo ── */}
         <Link to="/" className="inline-flex items-center gap-2.5 no-underline">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-primary text-lg font-black text-primary font-brand">
             TB
@@ -94,22 +87,27 @@ const AuthLayout = ({ children }) => {
           </span>
         </Link>
 
+        {/* ── Main copy ── */}
         <div className="flex flex-col">
+          {/* Pill badge */}
           <span className="mb-5 self-start rounded-full border border-primary/30 px-3.5 py-1 text-[9px] font-bold uppercase tracking-[2.5px] text-primary">
             Discover · Book · Experience
           </span>
 
+          {/* Headline */}
           <h2 className="mb-3 font-black leading-[1.08] tracking-tight text-foreground font-heading text-3xl lg:text-4xl xl:text-5xl">
             Your next unforgettable
             <br />
             <span className="text-primary">experience</span> awaits.
           </h2>
 
+          {/* Sub text */}
           <p className="mb-8 max-w-xs text-sm leading-relaxed text-muted-foreground">
             Thousands of events. One platform. From underground gigs to stadium
             shows.
           </p>
 
+          {/* Stats */}
           <div className="mb-9 flex flex-wrap gap-x-8 gap-y-3">
             {STATS.map(({ value, label }) => (
               <div key={label}>
@@ -123,6 +121,7 @@ const AuthLayout = ({ children }) => {
             ))}
           </div>
 
+          {/* Testimonial — border only, zero fill */}
           <div className="max-w-sm rounded-2xl border border-border px-5 py-[18px]">
             <p className="mb-1.5 font-serif text-2xl leading-none text-primary">
               "
@@ -130,12 +129,10 @@ const AuthLayout = ({ children }) => {
             <p className="mb-3 min-h-[40px] text-xs leading-relaxed text-muted-foreground transition-opacity duration-300">
               {t.quote}
             </p>
-
             <div className="flex items-center gap-2.5">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary text-[10px] font-black text-primary">
                 {t.name[0]}
               </div>
-
               <div>
                 <p className="text-[11px] font-semibold text-foreground">
                   {t.name}
@@ -147,22 +144,21 @@ const AuthLayout = ({ children }) => {
             </div>
           </div>
 
+          {/* Dots */}
           <div className="mt-3.5 flex items-center gap-1.5">
             {TESTIMONIALS.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setTIdx(i)}
-                className={`h-[5px] rounded-full border-0 p-0 cursor-pointer transition-all duration-300
-                ${
-                  i === tIdx
-                    ? "w-4 bg-primary"
-                    : "w-[5px] bg-border hover:bg-muted-foreground"
-                }`}
+                aria-label={`Testimonial ${i + 1}`}
+                className={`h-[5px] rounded-full border-0 p-0 cursor-pointer transition-all duration-300 outline-none
+                  ${i === tIdx ? "w-4 bg-primary" : "w-[5px] bg-border hover:bg-muted-foreground"}`}
               />
             ))}
           </div>
         </div>
 
+        {/* Footer links */}
         <footer className="flex flex-wrap gap-x-5 gap-y-1">
           {["Privacy", "Terms", "Help"].map((l) => (
             <Link
@@ -176,7 +172,9 @@ const AuthLayout = ({ children }) => {
         </footer>
       </aside>
 
-      {/* RIGHT PANEL */}
+      {/* ══════════════════════════════════════════════════════════
+          RIGHT — Form / children
+      ══════════════════════════════════════════════════════════ */}
       <main className="flex flex-col items-center justify-center overflow-y-auto min-h-[calc(100vh-52px)] md:min-h-screen px-5 py-10 sm:px-10 sm:py-14">
         <div className="w-full max-w-[420px]">{children}</div>
       </main>

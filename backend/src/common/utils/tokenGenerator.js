@@ -4,62 +4,56 @@ const jwt = require('jsonwebtoken');
 const authConfig = require('../../config/auth.config');
 const { UnauthorizedError } = require('../errors/AppError');
 
-// ── Token type constants ───────────────────────────────────────────────────────
-// FIX: Embed a 'type' claim in every token payload so access tokens cannot be
-// replayed as refresh tokens (substitution / confused-deputy attack).
-const TOKEN_TYPES = {
-  ACCESS: 'access',
-  REFRESH: 'refresh',
-  EMAIL_VERIFICATION: 'email_verification',
-  PASSWORD_RESET: 'password_reset',
-};
-
 /**
  * Generate JWT Access Token
+ * @param {Object} payload - Token payload
+ * @returns {string} Signed JWT token
  */
 const generateAccessToken = (payload) => {
   const { secret, expiresIn, algorithm } = authConfig.jwt.accessToken;
-  return jwt.sign({ ...payload, type: TOKEN_TYPES.ACCESS }, secret, { expiresIn, algorithm });
+  return jwt.sign(payload, secret, { expiresIn, algorithm });
 };
 
 /**
  * Generate JWT Refresh Token
+ * @param {Object} payload - Token payload
+ * @returns {string} Signed JWT refresh token
  */
 const generateRefreshToken = (payload) => {
   const { secret, expiresIn, algorithm } = authConfig.jwt.refreshToken;
-  return jwt.sign({ ...payload, type: TOKEN_TYPES.REFRESH }, secret, { expiresIn, algorithm });
+  return jwt.sign(payload, secret, { expiresIn, algorithm });
 };
 
 /**
  * Generate Email Verification Token
+ * @param {Object} payload - Token payload
+ * @returns {string} Signed JWT token
  */
 const generateEmailVerificationToken = (payload) => {
   const { secret, expiresIn } = authConfig.jwt.emailVerification;
-  return jwt.sign({ ...payload, type: TOKEN_TYPES.EMAIL_VERIFICATION }, secret, { expiresIn });
+  return jwt.sign(payload, secret, { expiresIn });
 };
 
 /**
  * Generate Password Reset Token
+ * @param {Object} payload - Token payload
+ * @returns {string} Signed JWT token
  */
 const generatePasswordResetToken = (payload) => {
   const { secret, expiresIn } = authConfig.jwt.passwordReset;
-  return jwt.sign({ ...payload, type: TOKEN_TYPES.PASSWORD_RESET }, secret, { expiresIn });
+  return jwt.sign(payload, secret, { expiresIn });
 };
 
 /**
  * Verify Access Token
- * FIX: Rejects tokens whose 'type' claim is not 'access' (prevents refresh token
- *      from being accepted here).
+ * @param {string} token - JWT access token
+ * @returns {Object} Decoded payload
+ * @throws {UnauthorizedError}
  */
 const verifyAccessToken = (token) => {
   try {
-    const decoded = jwt.verify(token, authConfig.jwt.accessToken.secret);
-    if (decoded.type && decoded.type !== TOKEN_TYPES.ACCESS) {
-      throw new UnauthorizedError('Invalid token type.');
-    }
-    return decoded;
+    return jwt.verify(token, authConfig.jwt.accessToken.secret);
   } catch (error) {
-    if (error instanceof UnauthorizedError) throw error;
     if (error.name === 'TokenExpiredError') {
       throw new UnauthorizedError('Access token has expired. Please refresh your token.');
     }
@@ -72,17 +66,14 @@ const verifyAccessToken = (token) => {
 
 /**
  * Verify Refresh Token
- * FIX: Rejects tokens whose 'type' claim is not 'refresh'.
+ * @param {string} token - JWT refresh token
+ * @returns {Object} Decoded payload
+ * @throws {UnauthorizedError}
  */
 const verifyRefreshToken = (token) => {
   try {
-    const decoded = jwt.verify(token, authConfig.jwt.refreshToken.secret);
-    if (decoded.type && decoded.type !== TOKEN_TYPES.REFRESH) {
-      throw new UnauthorizedError('Invalid token type.');
-    }
-    return decoded;
+    return jwt.verify(token, authConfig.jwt.refreshToken.secret);
   } catch (error) {
-    if (error instanceof UnauthorizedError) throw error;
     if (error.name === 'TokenExpiredError') {
       throw new UnauthorizedError('Refresh token has expired. Please login again.');
     }
@@ -95,16 +86,13 @@ const verifyRefreshToken = (token) => {
 
 /**
  * Verify Email Verification Token
+ * @param {string} token - Email verification JWT
+ * @returns {Object} Decoded payload
  */
 const verifyEmailVerificationToken = (token) => {
   try {
-    const decoded = jwt.verify(token, authConfig.jwt.emailVerification.secret);
-    if (decoded.type && decoded.type !== TOKEN_TYPES.EMAIL_VERIFICATION) {
-      throw new UnauthorizedError('Invalid token type.');
-    }
-    return decoded;
+    return jwt.verify(token, authConfig.jwt.emailVerification.secret);
   } catch (error) {
-    if (error instanceof UnauthorizedError) throw error;
     if (error.name === 'TokenExpiredError') {
       throw new UnauthorizedError('Email verification link has expired. Please request a new one.');
     }
@@ -114,16 +102,13 @@ const verifyEmailVerificationToken = (token) => {
 
 /**
  * Verify Password Reset Token
+ * @param {string} token - Password reset JWT
+ * @returns {Object} Decoded payload
  */
 const verifyPasswordResetToken = (token) => {
   try {
-    const decoded = jwt.verify(token, authConfig.jwt.passwordReset.secret);
-    if (decoded.type && decoded.type !== TOKEN_TYPES.PASSWORD_RESET) {
-      throw new UnauthorizedError('Invalid token type.');
-    }
-    return decoded;
+    return jwt.verify(token, authConfig.jwt.passwordReset.secret);
   } catch (error) {
-    if (error instanceof UnauthorizedError) throw error;
     if (error.name === 'TokenExpiredError') {
       throw new UnauthorizedError('Password reset link has expired. Please request a new one.');
     }
@@ -133,6 +118,8 @@ const verifyPasswordResetToken = (token) => {
 
 /**
  * Decode a token without verification (for reading expired tokens)
+ * @param {string} token
+ * @returns {Object|null}
  */
 const decodeToken = (token) => {
   return jwt.decode(token);
@@ -140,6 +127,8 @@ const decodeToken = (token) => {
 
 /**
  * Generate both access and refresh tokens
+ * @param {Object} payload
+ * @returns {{ accessToken: string, refreshToken: string }}
  */
 const generateTokenPair = (payload) => {
   return {
@@ -150,6 +139,8 @@ const generateTokenPair = (payload) => {
 
 /**
  * Extract token from Authorization header
+ * @param {string} authHeader
+ * @returns {string|null}
  */
 const extractBearerToken = (authHeader) => {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -159,7 +150,6 @@ const extractBearerToken = (authHeader) => {
 };
 
 module.exports = {
-  TOKEN_TYPES,
   generateAccessToken,
   generateRefreshToken,
   generateEmailVerificationToken,

@@ -5,52 +5,50 @@ const authRepository = require('./auth.repository');
 const { UnauthorizedError, ForbiddenError } = require('../../common/errors/AppError');
 const { ROLES, hasMinimumRole, hasPermission } = require('../../common/constants/roles');
 const asyncHandler = require('../../common/utils/asyncHandler');
+const logger = require("../../infrastructure/logger/logger");
 
 /**
- * protect — require valid JWT access token
- * Reads from Authorization header (Bearer) or accessToken cookie.
- * Also checks:
- *   - user still exists in DB
- *   - account is active
- *   - password hasn't changed since token was issued
+ * Protect routes — require valid JWT access token
  */
 const protect = asyncHandler(async (req, res, next) => {
-  // 1. Extract token
+  // 1. Extract token from header or cookie
   let token = extractBearerToken(req.headers.authorization);
   if (!token && req.cookies?.accessToken) {
     token = req.cookies.accessToken;
   }
+
   if (!token) {
     throw new UnauthorizedError('Access token is required. Please login.');
   }
 
-  // 2. Verify token (also checks type === 'access')
+  // 2. Verify token
   const decoded = verifyAccessToken(token);
 
-  // 3. User must still exist
+  // 3. Find user
   const user = await authRepository.findUserById(decoded.userId);
   if (!user) {
     throw new UnauthorizedError('The user belonging to this token no longer exists.');
   }
 
-  // 4. Account must be active
+  // 4. Check if user is active
   if (!user.isActive) {
     throw new ForbiddenError('Your account has been deactivated. Please contact support.');
   }
 
-  // 5. Password must not have changed after token was issued
+  // 5. Check if password was changed after token issued
   if (user.wasPasswordChangedAfter(decoded.iat)) {
     throw new UnauthorizedError('Password was recently changed. Please login again.');
   }
 
-  // 6. Attach to request
+  // 6. Attach user to request
   req.user = user;
   req.tokenPayload = decoded;
+
   next();
 });
 
 /**
- * optionalAuth — attach user if token present, silently skip if not
+ * Optionally authenticate — attach user if token present, don't fail if not
  */
 const optionalAuth = asyncHandler(async (req, res, next) => {
   const token = extractBearerToken(req.headers.authorization);
@@ -64,18 +62,20 @@ const optionalAuth = asyncHandler(async (req, res, next) => {
       req.tokenPayload = decoded;
     }
   } catch {
-    // Silently fail — this is intentional for optional auth
+    // Silently fail for optional auth
   }
   next();
 });
 
 /**
- * restrictTo — require one of the given roles
+ * Restrict to specific roles
  * Usage: restrictTo(ROLES.ADMIN, ROLES.SUPER_ADMIN)
  */
 const restrictTo = (...roles) => {
   return (req, res, next) => {
-    if (!req.user) throw new UnauthorizedError('Authentication required.');
+    if (!req.user) {
+      throw new UnauthorizedError('Authentication required.');
+    }
     if (!roles.includes(req.user.role)) {
       throw new ForbiddenError(`Access denied. Required roles: ${roles.join(', ')}`);
     }
@@ -84,12 +84,14 @@ const restrictTo = (...roles) => {
 };
 
 /**
- * requireMinRole — require at least a given role level
+ * Require minimum role level
  * Usage: requireMinRole(ROLES.MODERATOR)
  */
 const requireMinRole = (minimumRole) => {
   return (req, res, next) => {
-    if (!req.user) throw new UnauthorizedError('Authentication required.');
+    if (!req.user) {
+      throw new UnauthorizedError('Authentication required.');
+    }
     if (!hasMinimumRole(req.user.role, minimumRole)) {
       throw new ForbiddenError(`Access denied. Minimum required role: ${minimumRole}`);
     }
@@ -98,12 +100,14 @@ const requireMinRole = (minimumRole) => {
 };
 
 /**
- * requirePermission — require a specific permission string
+ * Require specific permission
  * Usage: requirePermission('manage:roles')
  */
 const requirePermission = (permission) => {
   return (req, res, next) => {
-    if (!req.user) throw new UnauthorizedError('Authentication required.');
+    if (!req.user) {
+      throw new UnauthorizedError('Authentication required.');
+    }
     if (!hasPermission(req.user.role, permission)) {
       throw new ForbiddenError(`Access denied. Missing permission: ${permission}`);
     }
@@ -112,10 +116,12 @@ const requirePermission = (permission) => {
 };
 
 /**
- * requireEmailVerified — user must have verified their email
+ * Require verified email
  */
 const requireEmailVerified = (req, res, next) => {
-  if (!req.user) throw new UnauthorizedError('Authentication required.');
+  if (!req.user) {
+    throw new UnauthorizedError('Authentication required.');
+  }
   if (!req.user.isEmailVerified) {
     throw new ForbiddenError('Please verify your email address to access this resource.');
   }
@@ -123,10 +129,10 @@ const requireEmailVerified = (req, res, next) => {
 };
 
 /**
- * extractRefreshToken — reads refresh token from cookie (preferred) or body
+ * Verify refresh token from body or cookie
  */
 const extractRefreshToken = (req, res, next) => {
-  const token = req.cookies?.refreshToken || req.body.refreshToken;
+  const token = req.body.refreshToken || req.cookies?.refreshToken;
   if (!token) {
     throw new UnauthorizedError('Refresh token is required.');
   }

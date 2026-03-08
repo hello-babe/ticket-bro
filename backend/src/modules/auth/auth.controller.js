@@ -13,7 +13,7 @@ const {
   validateTwoFactorVerify,
 } = require('./auth.validation');
 const { RegisterDTO, LoginDTO, ForgotPasswordDTO, ResetPasswordDTO, ChangePasswordDTO } = require('./dtos/index');
-const { sendSuccess, sendCreated } = require('../../common/utils/apiResponse');
+const { sendSuccess, sendCreated, sendError } = require('../../common/utils/apiResponse');
 const { BadRequestError } = require('../../common/errors/AppError');
 const authConfig = require('../../config/auth.config');
 const env = require('../../config/env');
@@ -25,33 +25,15 @@ const getRequestMeta = (req) => ({
   userAgent: req.headers['user-agent'] || 'Unknown',
 });
 
-/**
- * Set the refresh token as an httpOnly cookie.
- * Path is '/' so the browser sends it to ALL auth endpoints (refresh, logout, etc.)
- * FIX: was '/api/v1/auth/refresh-token' which prevented logout from receiving the cookie.
- */
 const setRefreshTokenCookie = (res, refreshToken) => {
   res.cookie('refreshToken', refreshToken, {
-    httpOnly: authConfig.cookie.httpOnly,
-    secure: authConfig.cookie.secure,
-    sameSite: authConfig.cookie.sameSite,
-    maxAge: authConfig.cookie.maxAge,
-    path: '/',  // FIX: was path-restricted — now all /api/* paths receive the cookie
+    ...authConfig.cookie,
+    path: '/api/v1/auth/refresh-token',
   });
 };
 
-/**
- * Clear the refresh token cookie.
- * FIX: attributes MUST match setRefreshTokenCookie exactly; mismatched path/secure
- *      means clearCookie silently fails and the old token stays in the browser.
- */
 const clearRefreshTokenCookie = (res) => {
-  res.clearCookie('refreshToken', {
-    httpOnly: authConfig.cookie.httpOnly,
-    secure: authConfig.cookie.secure,
-    sameSite: authConfig.cookie.sameSite,
-    path: '/',  // FIX: must match the path used in setRefreshTokenCookie
-  });
+  res.clearCookie('refreshToken', { path: '/api/v1/auth/refresh-token' });
 };
 
 const validateOrThrow = (validator, data) => {
@@ -60,20 +42,6 @@ const validateOrThrow = (validator, data) => {
     throw new BadRequestError('Validation failed', errors);
   }
   return value;
-};
-
-/**
- * Strip refreshToken from the response body before sending.
- * The refresh token is already delivered via httpOnly cookie — including it
- * in the JSON body would expose it to JavaScript (XSS risk).
- * FIX: prevents double-delivery of the refresh token.
- */
-const sanitiseTokenResponse = (result) => {
-  if (result && result.tokens) {
-    const { refreshToken: _dropped, ...safeTokens } = result.tokens;
-    return { ...result, tokens: safeTokens };
-  }
-  return result;
 };
 
 // ── Controllers ───────────────────────────────────────────────────────────────
@@ -91,11 +59,7 @@ const register = async (req, res) => {
 
   setRefreshTokenCookie(res, result.tokens.refreshToken);
 
-  return sendCreated(
-    res,
-    'Registration successful. Please check your email to verify your account.',
-    sanitiseTokenResponse(result),
-  );
+  return sendCreated(res, 'Registration successful. Please check your email to verify your account.', result);
 };
 
 /**
@@ -110,14 +74,14 @@ const login = async (req, res) => {
 
   const result = await authService.login(loginDTO, meta);
 
-  // If 2FA required, return partial response — no tokens issued yet
+  // If 2FA required, return partial response
   if (result.requiresTwoFactor) {
     return sendSuccess(res, result.message, { requiresTwoFactor: true, email: result.email });
   }
 
   setRefreshTokenCookie(res, result.tokens.refreshToken);
 
-  return sendSuccess(res, 'Login successful.', sanitiseTokenResponse(result));
+  return sendSuccess(res, 'Login successful.', result);
 };
 
 /**
@@ -126,8 +90,7 @@ const login = async (req, res) => {
  * @access  Private
  */
 const logout = async (req, res) => {
-  // Read token from cookie (preferred) or body fallback
-  const refreshToken = req.cookies?.refreshToken || req.body.refreshToken || req.refreshToken;
+  const refreshToken = req.refreshToken || req.body.refreshToken || req.cookies?.refreshToken;
   await authService.logout(refreshToken);
   clearRefreshTokenCookie(res);
   return sendSuccess(res, 'Logged out successfully.');
@@ -147,12 +110,10 @@ const logoutAll = async (req, res) => {
 /**
  * @route   POST /api/v1/auth/refresh-token
  * @desc    Refresh access and refresh tokens
- * @access  Public (requires refresh token cookie or body)
+ * @access  Public (requires refresh token)
  */
 const refreshToken = async (req, res) => {
-  // FIX: prefer cookie — the browser sends it automatically.
-  // Also accept body for clients that can't use cookies (e.g. mobile).
-  const token = req.cookies?.refreshToken || req.body.refreshToken;
+  const token = req.body.refreshToken || req.cookies?.refreshToken;
   if (!token) throw new BadRequestError('Refresh token is required.');
 
   const meta = getRequestMeta(req);
@@ -160,12 +121,7 @@ const refreshToken = async (req, res) => {
 
   setRefreshTokenCookie(res, tokens.refreshToken);
 
-  // FIX: only return the accessToken in the body — refreshToken is in the cookie
-  return sendSuccess(res, 'Token refreshed successfully.', {
-    accessToken: tokens.accessToken,
-    tokenType: 'Bearer',
-    expiresIn: tokens.expiresIn,
-  });
+  return sendSuccess(res, 'Token refreshed successfully.', tokens);
 };
 
 /**
@@ -179,8 +135,7 @@ const getMe = async (req, res) => {
 };
 
 /**
- * @route   GET /api/v1/auth/verify-email/:token
- * @route   POST /api/v1/auth/verify-email
+ * @route   POST /api/v1/auth/verify-email/:token
  * @desc    Verify email address
  * @access  Public
  */
@@ -304,11 +259,7 @@ const verifyTwoFactor = async (req, res) => {
 
   setRefreshTokenCookie(res, result.tokens.refreshToken);
 
-  return sendSuccess(
-    res,
-    'Two-factor authentication verified. Login successful.',
-    sanitiseTokenResponse(result),
-  );
+  return sendSuccess(res, 'Two-factor authentication verified. Login successful.', result);
 };
 
 /**
@@ -322,7 +273,7 @@ const googleOAuthCallback = async (req, res) => {
 
   setRefreshTokenCookie(res, result.tokens.refreshToken);
 
-  // FIX: only pass accessToken in URL (refresh token is in httpOnly cookie)
+  // Redirect to frontend with token
   const redirectUrl = `${env.FRONTEND_URL}/auth/oauth-success?token=${result.tokens.accessToken}`;
   return res.redirect(redirectUrl);
 };
