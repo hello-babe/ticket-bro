@@ -2,29 +2,20 @@
 
 require('dotenv').config();
 
-// ── Required env vars — app crashes at startup if any are missing ─────────────
 const requiredEnvVars = [
   'JWT_ACCESS_SECRET',
   'JWT_REFRESH_SECRET',
-  'EMAIL_VERIFICATION_SECRET',
-  'PASSWORD_RESET_SECRET',
   'MONGODB_URI',
 ];
-
-const _isDev = () => (process.env.NODE_ENV || 'development') === 'development';
-const _isProd = () => (process.env.NODE_ENV || 'development') === 'production';
-const _isTest = () => (process.env.NODE_ENV || 'development') === 'test';
 
 const validateEnv = () => {
   const missing = requiredEnvVars.filter((key) => !process.env[key]);
   if (missing.length > 0) {
-    throw new Error(
-      `[STARTUP] Missing required environment variables:\n  ${missing.join('\n  ')}\nCopy .env.example to .env and fill in the values.`
-    );
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
 };
 
-if (!_isTest()) {
+if (process.env.NODE_ENV !== 'test') {
   validateEnv();
 }
 
@@ -37,18 +28,18 @@ const env = {
 
   // Database
   MONGODB_URI:
-    _isTest()
+    process.env.NODE_ENV === 'test'
       ? process.env.MONGODB_URI_TEST || process.env.MONGODB_URI
       : process.env.MONGODB_URI,
 
-  // JWT — NO fallbacks. App refuses to start without real secrets.
-  JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET,
-  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
+  // JWT
+  JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET || 'fallback-dev-secret',
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'fallback-dev-refresh-secret',
   JWT_ACCESS_EXPIRES_IN: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
-  EMAIL_VERIFICATION_SECRET: process.env.EMAIL_VERIFICATION_SECRET,
+  EMAIL_VERIFICATION_SECRET: process.env.EMAIL_VERIFICATION_SECRET || 'email-verify-secret',
   EMAIL_VERIFICATION_EXPIRES_IN: process.env.EMAIL_VERIFICATION_EXPIRES_IN || '24h',
-  PASSWORD_RESET_SECRET: process.env.PASSWORD_RESET_SECRET,
+  PASSWORD_RESET_SECRET: process.env.PASSWORD_RESET_SECRET || 'password-reset-secret',
   PASSWORD_RESET_EXPIRES_IN: process.env.PASSWORD_RESET_EXPIRES_IN || '1h',
 
   // Email
@@ -93,16 +84,16 @@ const env = {
   // 2FA
   TWO_FACTOR_APP_NAME: process.env.TWO_FACTOR_APP_NAME || 'Ticket Bro',
 
-  // Cookie — SECURE is forced true in production; developer opt-in for dev HTTPS
+  // Cookie
   COOKIE_SECRET: process.env.COOKIE_SECRET || 'cookie-secret',
-  COOKIE_SECURE: _isProd() ? true : process.env.COOKIE_SECURE === 'true',
+  COOKIE_SECURE: process.env.COOKIE_SECURE === 'true',
   COOKIE_HTTP_ONLY: process.env.COOKIE_HTTP_ONLY !== 'false',
-  COOKIE_SAME_SITE: process.env.COOKIE_SAME_SITE || 'lax',
+  COOKIE_SAME_SITE: process.env.COOKIE_SAME_SITE || 'strict',
 
   // Helpers
-  isDevelopment: _isDev,
-  isProduction: _isProd,
-  isTest: _isTest,
+  isDevelopment: () => env.NODE_ENV === 'development',
+  isProduction: () => env.NODE_ENV === 'production',
+  isTest: () => env.NODE_ENV === 'test',
 };
 
 module.exports = env;

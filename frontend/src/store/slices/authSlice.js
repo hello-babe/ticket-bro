@@ -1,73 +1,84 @@
 // frontend/src/store/slices/authSlice.js
 
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import authService from '../../services/authService';
-import { storageUtils } from '../../utils/storageUtils';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import authService from "../../services/authService";
+import { storageUtils } from "../../utils/storageUtils";
 
 // ── Async Thunks ──────────────────────────────────────────────────────────────
 
 export const registerUser = createAsyncThunk(
-  'auth/register',
+  "auth/register",
   async (data, { rejectWithValue }) => {
     try {
-      await authService.register(data);
-      // FIX: Discard tokens on register — email is NOT yet verified.
-      // Force user to verify email before they can access protected routes.
+      const res = await authService.register(data);
+      // FIX: Do NOT store tokens or set isAuthenticated here.
+      // The backend issues tokens on register, but the user's email is not
+      // verified yet. We intentionally discard the tokens and force them
+      // to verify their email before they can log in.
+      // Tokens will be issued properly after login (post-verification).
       return { registered: true };
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Registration failed.');
+      return rejectWithValue(
+        err.response?.data?.message || "Registration failed.",
+      );
     }
   },
 );
 
 export const loginUser = createAsyncThunk(
-  'auth/login',
+  "auth/login",
   async (data, { rejectWithValue }) => {
     try {
       const res = await authService.login(data);
       const payload = res.data.data;
 
-      // 2FA path — no tokens issued yet
+      // 2FA path — no tokens yet
       if (payload.requiresTwoFactor) {
         return { requiresTwoFactor: true, email: payload.email };
       }
 
-      // FIX: only store the accessToken in memory (via storageUtils.setTokens).
-      // refreshToken arrives as httpOnly cookie — never touch it in JS.
-      // User object goes to sessionStorage for reload resilience.
-      storageUtils.setTokens({ accessToken: payload.tokens.accessToken });
+      // Normal login — store tokens + user
+      storageUtils.setTokens({
+        accessToken: payload.tokens.accessToken,
+        refreshToken: payload.tokens.refreshToken,
+      });
       storageUtils.setUser(payload.user);
 
-      return { user: payload.user, accessToken: payload.tokens.accessToken };
+      return { user: payload.user, tokens: payload.tokens };
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Login failed.');
+      return rejectWithValue(err.response?.data?.message || "Login failed.");
     }
   },
 );
 
 export const verifyTwoFactor = createAsyncThunk(
-  'auth/verifyTwoFactor',
+  "auth/verifyTwoFactor",
   async ({ email, otp }, { rejectWithValue }) => {
     try {
       const res = await authService.verifyTwoFactor(email, otp);
       const { user, tokens } = res.data.data;
 
-      storageUtils.setTokens({ accessToken: tokens.accessToken });
+      storageUtils.setTokens({
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      });
       storageUtils.setUser(user);
 
-      return { user, accessToken: tokens.accessToken };
+      return { user, tokens };
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'OTP verification failed.');
+      return rejectWithValue(
+        err.response?.data?.message || "OTP verification failed.",
+      );
     }
   },
 );
 
 export const logoutUser = createAsyncThunk(
-  'auth/logout',
+  "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
-      // Server will clear the httpOnly refreshToken cookie
-      await authService.logout();
+      const rt = storageUtils.getRefreshToken();
+      await authService.logout(rt);
     } catch {
       // Always clear local state even if server call fails
     } finally {
@@ -77,7 +88,7 @@ export const logoutUser = createAsyncThunk(
 );
 
 export const fetchMe = createAsyncThunk(
-  'auth/fetchMe',
+  "auth/fetchMe",
   async (_, { rejectWithValue }) => {
     try {
       const res = await authService.getMe();
@@ -86,39 +97,36 @@ export const fetchMe = createAsyncThunk(
       return user;
     } catch (err) {
       storageUtils.clearAll();
-      return rejectWithValue(err.response?.data?.message || 'Failed to fetch user.');
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to fetch user.",
+      );
     }
   },
 );
 
 // ── Slice ─────────────────────────────────────────────────────────────────────
 
-// FIX: On page reload, access token is gone (it was in memory).
-// Check sessionStorage for a persisted user object:
-//   - If found: set user but NOT isAuthenticated yet — fetchMe() will verify.
-//   - AuthContext.useEffect detects !isAuthenticated + persisted user → calls fetchMe()
-//   - fetchMe → GET /auth/me → 401 → api.js interceptor → POST /auth/refresh-token
-//     (browser sends httpOnly cookie automatically) → new accessToken in memory
-//   - fetchMe retried and succeeds → isAuthenticated = true
+// Rehydrate from localStorage on page refresh
 const persistedUser = storageUtils.getUser();
+const persistedToken = storageUtils.getAccessToken();
 
 const initialState = {
   user: persistedUser || null,
-  // FIX: isAuthenticated starts false on reload even if we have a cached user.
-  // We can't trust it until the server has validated the session via /me.
-  isAuthenticated: false,
-  isLoading: !!persistedUser, // show loading spinner while silent refresh is in flight
+  isAuthenticated: !!(persistedUser && persistedToken),
+  isLoading: false,
   error: null,
   requiresTwoFactor: false,
   twoFactorEmail: null,
 };
 
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
 
   reducers: {
-    clearError: (state) => { state.error = null; },
+    clearError: (state) => {
+      state.error = null;
+    },
     clearTwoFactor: (state) => {
       state.requiresTwoFactor = false;
       state.twoFactorEmail = null;
@@ -127,19 +135,20 @@ const authSlice = createSlice({
       state.user = action.payload;
       storageUtils.setUser(action.payload);
     },
-    // Used by OAuthSuccessPage to set auth state after redirect
     setAuthFromOAuth: (state, action) => {
-      const { user, accessToken } = action.payload;
+      const { user, accessToken, refreshToken } = action.payload;
       state.user = user;
       state.isAuthenticated = true;
       state.error = null;
-      storageUtils.setTokens({ accessToken });
+      storageUtils.setTokens({ accessToken, refreshToken });
       storageUtils.setUser(user);
     },
   },
 
   extraReducers: (builder) => {
     // ── register ─────────────────────────────────────────────────────────────
+    // FIX: fulfilled does NOT set user or isAuthenticated.
+    // User is in "registered but unverified" limbo — not logged in.
     builder
       .addCase(registerUser.pending, (state) => {
         state.isLoading = true;
@@ -147,8 +156,8 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state) => {
         state.isLoading = false;
-        state.user = null;
-        state.isAuthenticated = false; // NOT authenticated — email not verified
+        state.user = null; // no user in state
+        state.isAuthenticated = false; // NOT authenticated
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -203,7 +212,6 @@ const authSlice = createSlice({
       state.requiresTwoFactor = false;
       state.twoFactorEmail = null;
       state.error = null;
-      state.isLoading = false;
     });
 
     // ── fetchMe ───────────────────────────────────────────────────────────────
@@ -224,9 +232,11 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, clearTwoFactor, setAuthFromOAuth, updateUser } = authSlice.actions;
+export const { clearError, clearTwoFactor, setAuthFromOAuth, updateUser } =
+  authSlice.actions;
 
 // ── Selectors ─────────────────────────────────────────────────────────────────
+
 export const selectUser = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectIsLoading = (state) => state.auth.isLoading;

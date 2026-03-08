@@ -1,8 +1,8 @@
 // frontend/src/context/AuthContext.jsx
 
-import React, { createContext, useContext, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useContext, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   registerUser,
   loginUser,
@@ -17,11 +17,11 @@ import {
   selectAuthError,
   selectRequires2FA,
   select2FAEmail,
-} from '../store/slices/authSlice';
-import { storageUtils } from '../utils/storageUtils';
-import authConfig from '../config/auth.config';
+} from "../store/slices/authSlice";
+import { storageUtils } from "../utils/storageUtils";
+import authConfig from "../config/auth.config";
 
-// ── Context (read-only access) ────────────────────────────────────────────────
+// ── Context (consumed by components that only need read access) ───────────────
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -30,22 +30,15 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isLoading = useSelector(selectIsLoading);
 
-  // ── Silent re-authentication on page reload ─────────────────────────────────
-  // FIX: In the new in-memory token model, the access token is gone after a reload.
-  //
-  // Old (broken) check: `if (storageUtils.getAccessToken() && !user)` 
-  //   → getAccessToken() is ALWAYS null after reload, so this never triggered.
-  //
-  // New check: if sessionStorage has a persisted user object AND we're not yet
-  //   authenticated, call fetchMe(). The /auth/me request will 401, the axios
-  //   interceptor fires POST /auth/refresh-token (httpOnly cookie auto-sent),
-  //   gets a new access token, and retries /auth/me — all transparently.
+  // FIX 1: On mount, if a token exists in storage but Redux has no user yet
+  // (e.g. page refresh), rehydrate by calling /me.
+  // FIX 2: dispatch added to dependency array (eslint-plugin-react-hooks).
   useEffect(() => {
-    const persistedUser = storageUtils.getUser();
-    if (persistedUser && !isAuthenticated) {
+    const token = storageUtils.getAccessToken();
+    if (token && !user) {
       dispatch(fetchMe());
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated, isLoading }}>
@@ -56,11 +49,12 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuthContext = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuthContext must be used inside <AuthProvider>');
+  if (!ctx)
+    throw new Error("useAuthContext must be used inside <AuthProvider>");
   return ctx;
 };
 
-// ── Main hook (components that need actions too) ──────────────────────────────
+// ── Main hook (used by components that need actions too) ──────────────────────
 export const useAuth = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -71,6 +65,11 @@ export const useAuth = () => {
   const requires2FA = useSelector(selectRequires2FA);
   const twoFactorEmail = useSelector(select2FAEmail);
 
+  // ── register ────────────────────────────────────────────────────────────────
+  // FIX: After register the user's email is NOT yet verified.
+  // Navigate to a "check your email" page, NOT straight to /profile.
+  // Backend still issues tokens here so the user can later resend verification,
+  // but requireEmailVerified middleware blocks sensitive routes until verified.
   const register = async (data) => {
     const result = await dispatch(registerUser(data));
     if (!result.error) {
@@ -79,6 +78,9 @@ export const useAuth = () => {
     return result;
   };
 
+  // ── login ───────────────────────────────────────────────────────────────────
+  // FIX: Check requiresTwoFactor on the payload, NOT on result.error.
+  // When 2FA is required, there is no error — just an intermediate state.
   const login = async (data) => {
     const result = await dispatch(loginUser(data));
     if (!result.error) {
@@ -91,11 +93,17 @@ export const useAuth = () => {
     return result;
   };
 
+  // ── logout ──────────────────────────────────────────────────────────────────
+  // FIX: storageUtils.clearAll() is now handled inside the logoutUser thunk's
+  // finally block, so it always runs even if the API call fails.
   const logout = async () => {
     await dispatch(logoutUser());
     navigate(authConfig.routes.login);
   };
 
+  // ── verify 2FA ──────────────────────────────────────────────────────────────
+  // FIX: Tokens are issued by the server only after OTP is verified.
+  // The thunk stores them — nothing extra needed here.
   const verify2FA = async (email, otp) => {
     const result = await dispatch(verifyTwoFactor({ email, otp }));
     if (!result.error) {
@@ -121,4 +129,5 @@ export const useAuth = () => {
   };
 };
 
+// Default export for files using: import useAuth from '...'
 export default useAuth;
