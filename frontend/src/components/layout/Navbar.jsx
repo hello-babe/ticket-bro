@@ -1,529 +1,832 @@
-import React from "react";
+/**
+ * Navbar — Professional Category Navigation
+ *
+ * Fixed 3-level flyout system:
+ *  - Level 1: Top nav item → hovers to show Level 2 panel (drops below)
+ *  - Level 2: Category row → hovers to show Level 3 panel (flies out to side)
+ *  - Level 3: Subcategory panel (flies out from Level 2)
+ *
+ * Each level uses its own isolated group class so hover states don't bleed.
+ */
+
+import React, {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useRef,
+  memo,
+  forwardRef,
+} from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronLeft, X } from "lucide-react";
 import Container from "@/components/layout/Container";
 
-/* --------------------------
-   Static Nav Data
-   Route pattern: /browse/:categorySlug/:subCategorySlug/:eventTypeSlug
----------------------------*/
+// ─────────────────────────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────────────────────────
+
 const NAV_ITEMS = [
   {
-    id: 1,
-    name: "Music",
-    slug: "music",
+    id: 1, name: "Music", slug: "music",
     categories: [
-      {
-        id: 11,
-        name: "Concerts",
-        slug: "concerts",
-        subcategories: [
-          { id: 111, name: "Live Bands", slug: "live-bands" },
-          { id: 112, name: "Solo Artists", slug: "solo-artists" },
-          { id: 113, name: "Open Mic", slug: "open-mic" },
-        ],
-      },
-      {
-        id: 12,
-        name: "Festivals",
-        slug: "festivals",
-        subcategories: [
-          { id: 121, name: "Multi-Day", slug: "multi-day" },
-          { id: 122, name: "Outdoor", slug: "outdoor" },
-        ],
-      },
+      { id: 11, name: "Concerts", slug: "concerts", subcategories: [
+        { id: 111, name: "Live Bands", slug: "live-bands" },
+        { id: 112, name: "Solo Artists", slug: "solo-artists" },
+        { id: 113, name: "Open Mic", slug: "open-mic" },
+      ]},
+      { id: 12, name: "Festivals", slug: "festivals", subcategories: [
+        { id: 121, name: "Multi-Day", slug: "multi-day" },
+        { id: 122, name: "Outdoor", slug: "outdoor" },
+      ]},
       { id: 13, name: "Club Nights", slug: "club-nights", subcategories: [] },
     ],
   },
   {
-    id: 2,
-    name: "Sports",
-    slug: "sports",
+    id: 2, name: "Sports", slug: "sports",
     categories: [
-      {
-        id: 21,
-        name: "Football",
-        slug: "football",
-        subcategories: [
-          { id: 211, name: "League Matches", slug: "league-matches" },
-          { id: 212, name: "Cup Games", slug: "cup-games" },
-        ],
-      },
-      {
-        id: 22,
-        name: "Cricket",
-        slug: "cricket",
-        subcategories: [
-          { id: 221, name: "T20", slug: "t20" },
-          { id: 222, name: "ODI", slug: "odi" },
-        ],
-      },
+      { id: 21, name: "Football", slug: "football", subcategories: [
+        { id: 211, name: "League Matches", slug: "league-matches" },
+        { id: 212, name: "Cup Games", slug: "cup-games" },
+      ]},
+      { id: 22, name: "Cricket", slug: "cricket", subcategories: [
+        { id: 221, name: "T20", slug: "t20" },
+        { id: 222, name: "ODI", slug: "odi" },
+      ]},
       { id: 23, name: "Tennis", slug: "tennis", subcategories: [] },
       { id: 24, name: "Basketball", slug: "basketball", subcategories: [] },
     ],
   },
   {
-    id: 3,
-    name: "Arts & Culture",
-    slug: "arts-culture",
+    id: 3, name: "Arts & Culture", slug: "arts-culture",
     categories: [
-      {
-        id: 31,
-        name: "Theatre",
-        slug: "theatre",
-        subcategories: [
-          { id: 311, name: "Drama", slug: "drama" },
-          { id: 312, name: "Musical", slug: "musical" },
-          { id: 313, name: "Comedy", slug: "comedy" },
-        ],
-      },
-      {
-        id: 32,
-        name: "Exhibitions",
-        slug: "exhibitions",
-        subcategories: [
-          { id: 321, name: "Art Galleries", slug: "art-galleries" },
-          { id: 322, name: "Photography", slug: "photography" },
-        ],
-      },
+      { id: 31, name: "Theatre", slug: "theatre", subcategories: [
+        { id: 311, name: "Drama", slug: "drama" },
+        { id: 312, name: "Musical", slug: "musical" },
+        { id: 313, name: "Comedy", slug: "comedy" },
+      ]},
+      { id: 32, name: "Exhibitions", slug: "exhibitions", subcategories: [
+        { id: 321, name: "Art Galleries", slug: "art-galleries" },
+        { id: 322, name: "Photography", slug: "photography" },
+      ]},
       { id: 33, name: "Film", slug: "film", subcategories: [] },
     ],
   },
   {
-    id: 4,
-    name: "Food & Drink",
-    slug: "food-drink",
+    id: 4, name: "Food & Drink", slug: "food-drink",
     categories: [
-      {
-        id: 41,
-        name: "Dining",
-        slug: "dining",
-        subcategories: [
-          { id: 411, name: "Pop-Up", slug: "pop-up" },
-          { id: 412, name: "Fine Dining", slug: "fine-dining" },
-        ],
-      },
-      {
-        id: 42,
-        name: "Tastings",
-        slug: "tastings",
-        subcategories: [
-          { id: 421, name: "Wine", slug: "wine" },
-          { id: 422, name: "Craft Beer", slug: "craft-beer" },
-        ],
-      },
+      { id: 41, name: "Dining", slug: "dining", subcategories: [
+        { id: 411, name: "Pop-Up", slug: "pop-up" },
+        { id: 412, name: "Fine Dining", slug: "fine-dining" },
+      ]},
+      { id: 42, name: "Tastings", slug: "tastings", subcategories: [
+        { id: 421, name: "Wine", slug: "wine" },
+        { id: 422, name: "Craft Beer", slug: "craft-beer" },
+      ]},
     ],
   },
   {
-    id: 5,
-    name: "Business",
-    slug: "business",
+    id: 5, name: "Business", slug: "business",
     categories: [
-      {
-        id: 51,
-        name: "Conferences",
-        slug: "conferences",
-        subcategories: [
-          { id: 511, name: "Tech", slug: "tech" },
-          { id: 512, name: "Marketing", slug: "marketing" },
-        ],
-      },
-      {
-        id: 52,
-        name: "Networking",
-        slug: "networking",
-        subcategories: [],
-      },
-      {
-        id: 53,
-        name: "Workshops",
-        slug: "workshops",
-        subcategories: [
-          { id: 531, name: "Leadership", slug: "leadership" },
-          { id: 532, name: "Finance", slug: "finance" },
-        ],
-      },
+      { id: 51, name: "Conferences", slug: "conferences", subcategories: [
+        { id: 511, name: "Tech", slug: "tech" },
+        { id: 512, name: "Marketing", slug: "marketing" },
+      ]},
+      { id: 52, name: "Networking", slug: "networking", subcategories: [] },
+      { id: 53, name: "Workshops", slug: "workshops", subcategories: [
+        { id: 531, name: "Leadership", slug: "leadership" },
+        { id: 532, name: "Finance", slug: "finance" },
+      ]},
     ],
   },
   {
-    id: 6,
-    name: "Education",
-    slug: "education",
+    id: 6, name: "Education", slug: "education",
     categories: [
-      {
-        id: 61,
-        name: "Seminars",
-        slug: "seminars",
-        subcategories: [
-          { id: 611, name: "Science", slug: "science" },
-          { id: 612, name: "History", slug: "history" },
-        ],
-      },
+      { id: 61, name: "Seminars", slug: "seminars", subcategories: [
+        { id: 611, name: "Science", slug: "science" },
+        { id: 612, name: "History", slug: "history" },
+      ]},
       { id: 62, name: "Courses", slug: "courses", subcategories: [] },
     ],
   },
   {
-    id: 7,
-    name: "Health",
-    slug: "health",
+    id: 7, name: "Health", slug: "health",
     categories: [
-      {
-        id: 71,
-        name: "Wellness",
-        slug: "wellness",
-        subcategories: [
-          { id: 711, name: "Yoga", slug: "yoga" },
-          { id: 712, name: "Meditation", slug: "meditation" },
-        ],
-      },
-      {
-        id: 72,
-        name: "Fitness",
-        slug: "fitness",
-        subcategories: [
-          { id: 721, name: "HIIT", slug: "hiit" },
-          { id: 722, name: "CrossFit", slug: "crossfit" },
-        ],
-      },
+      { id: 71, name: "Wellness", slug: "wellness", subcategories: [
+        { id: 711, name: "Yoga", slug: "yoga" },
+        { id: 712, name: "Meditation", slug: "meditation" },
+      ]},
+      { id: 72, name: "Fitness", slug: "fitness", subcategories: [
+        { id: 721, name: "HIIT", slug: "hiit" },
+        { id: 722, name: "CrossFit", slug: "crossfit" },
+      ]},
     ],
   },
   {
-    id: 8,
-    name: "Technology",
-    slug: "technology",
+    id: 8, name: "Technology", slug: "technology",
     categories: [
-      {
-        id: 81,
-        name: "Hackathons",
-        slug: "hackathons",
-        subcategories: [
-          { id: 811, name: "AI & ML", slug: "ai-ml" },
-          { id: 812, name: "Web Dev", slug: "web-dev" },
-        ],
-      },
+      { id: 81, name: "Hackathons", slug: "hackathons", subcategories: [
+        { id: 811, name: "AI & ML", slug: "ai-ml" },
+        { id: 812, name: "Web Dev", slug: "web-dev" },
+      ]},
       { id: 82, name: "Meetups", slug: "meetups", subcategories: [] },
     ],
   },
   {
-    id: 9,
-    name: "Kids & Family",
-    slug: "kids-family",
+    id: 9, name: "Kids & Family", slug: "kids-family",
     categories: [
-      {
-        id: 91,
-        name: "Activities",
-        slug: "activities",
-        subcategories: [
-          { id: 911, name: "Outdoor", slug: "outdoor" },
-          { id: 912, name: "Indoor", slug: "indoor" },
-        ],
-      },
+      { id: 91, name: "Activities", slug: "activities", subcategories: [
+        { id: 911, name: "Outdoor", slug: "outdoor" },
+        { id: 912, name: "Indoor", slug: "indoor" },
+      ]},
       { id: 92, name: "Shows", slug: "shows", subcategories: [] },
     ],
   },
   {
-    id: 10,
-    name: "Community",
-    slug: "community",
+    id: 10, name: "Community", slug: "community",
     categories: [
-      {
-        id: 101,
-        name: "Charity",
-        slug: "charity",
-        subcategories: [
-          { id: 1011, name: "Fundraisers", slug: "fundraisers" },
-          { id: 1012, name: "Volunteering", slug: "volunteering" },
-        ],
-      },
+      { id: 101, name: "Charity", slug: "charity", subcategories: [
+        { id: 1011, name: "Fundraisers", slug: "fundraisers" },
+        { id: 1012, name: "Volunteering", slug: "volunteering" },
+      ]},
       { id: 102, name: "Markets", slug: "markets", subcategories: [] },
     ],
   },
 ];
 
-/* --------------------------
-   Visible / Hidden split
-   Show first N items, rest go into "Others"
-   Adjust VISIBLE_COUNT based on your UI needs
----------------------------*/
-const VISIBLE_COUNT = 6;
-const visibleItems = NAV_ITEMS.slice(0, VISIBLE_COUNT);
-const hiddenItems = NAV_ITEMS.slice(VISIBLE_COUNT);
+// ─────────────────────────────────────────────────────────────────
+// HOOKS
+// ─────────────────────────────────────────────────────────────────
 
-/* --------------------------
-   Design Tokens
----------------------------*/
-const navItemStyles =
-  "relative flex items-center h-full px-4 text-xs font-medium tracking-wide whitespace-nowrap cursor-pointer";
+const useRouteActive = () => {
+  const { pathname } = useLocation();
+  const seg = pathname.split("/").filter(Boolean);
 
-const mainIndicator =
-  "absolute bottom-0 left-1/2 -translate-x-1/2 h-[1px] bg-primary transition-all duration-300 origin-center";
+  const isTopActive  = useCallback((s)       => seg[0] === "browse" && seg[1] === s, [seg]);
+  const isCatActive  = useCallback((t, c)    => seg[0] === "browse" && seg[1] === t && seg[2] === c, [seg]);
+  const isSubActive  = useCallback((t, c, s) => seg[0] === "browse" && seg[1] === t && seg[2] === c && seg[3] === s, [seg]);
 
-const subItemStyles =
-  "relative flex items-center px-5 py-2.5 text-xs transition-all duration-200 w-full";
-
-const subIndicator =
-  "absolute bottom-0 left-1/2 -translate-x-1/2 h-[1px] bg-primary transition-all duration-300 origin-center";
-
-/* --------------------------
-   Active Helpers
----------------------------*/
-const useActiveHelpers = () => {
-  const location = useLocation();
-  const segments = location.pathname.split("/").filter(Boolean);
-
-  const isCategoryActive = (categorySlug) =>
-    segments[0] === "browse" && segments[1] === categorySlug;
-
-  const isSubCategoryActive = (categorySlug, subCategorySlug) =>
-    segments[0] === "browse" &&
-    segments[1] === categorySlug &&
-    segments[2] === subCategorySlug;
-
-  const isEventTypeActive = (categorySlug, subCategorySlug, eventTypeSlug) =>
-    segments[0] === "browse" &&
-    segments[1] === categorySlug &&
-    segments[2] === subCategorySlug &&
-    segments[3] === eventTypeSlug;
-
-  return { isCategoryActive, isSubCategoryActive, isEventTypeActive, pathname: location.pathname };
+  return { pathname, isTopActive, isCatActive, isSubActive };
 };
 
-/* --------------------------
-   Sub-dropdown for subcategories (eventTypeSlug level)
----------------------------*/
-const SubcategoryDropdown = ({ subcategories, categorySlug, subCategorySlug, isEventTypeActive }) => {
+const useNavOverflow = (containerRef, anchorRef, itemRefs) => {
+  const [visibleCount, setVisibleCount] = useState(NAV_ITEMS.length);
+  const MORE_BTN_W = 72;
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      const totalW  = container.offsetWidth;
+      const anchorW = anchorRef.current?.offsetWidth ?? 0;
+      let used      = anchorW;
+      let count     = 0;
+
+      for (let i = 0; i < NAV_ITEMS.length; i++) {
+        const el = itemRefs.current[i];
+        if (!el) continue;
+
+        const prevVis = el.style.visibility;
+        const prevPos = el.style.position;
+        el.style.visibility = "visible";
+        el.style.position   = "static";
+        const w = el.offsetWidth;
+        el.style.visibility = prevVis;
+        el.style.position   = prevPos;
+
+        const isLastPossible = i === NAV_ITEMS.length - 1;
+        const needed = used + w + (isLastPossible ? 0 : MORE_BTN_W);
+        if (needed > totalW) break;
+
+        used += w;
+        count++;
+      }
+
+      setVisibleCount(count);
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return visibleCount;
+};
+
+/**
+ * Detects whether a flyout panel should open LEFT or RIGHT based on
+ * available viewport space — calculated immediately on mount and on
+ * every resize, so the chevron arrow is always correct before hover.
+ */
+const useFlyoutSide = (panelWidth = 224) => {
+  const ref = useRef(null);
+  const [openLeft, setOpenLeft] = useState(false);
+
+  const detect = useCallback(() => {
+    if (!ref.current) return;
+    const { right } = ref.current.getBoundingClientRect();
+    setOpenLeft(right + panelWidth > window.innerWidth);
+  }, [panelWidth]);
+
+  // Run on mount (after layout so getBoundingClientRect is accurate)
+  useLayoutEffect(() => {
+    detect();
+  }, [detect]);
+
+  // Re-run on viewport resize
+  useEffect(() => {
+    window.addEventListener("resize", detect, { passive: true });
+    return () => window.removeEventListener("resize", detect);
+  }, [detect]);
+
+  // Still expose detect so callers can re-check on mouseenter if they want
+  return { ref, openLeft, detect };
+};
+
+// ─────────────────────────────────────────────────────────────────
+// LEVEL 3 — Subcategory side panel
+// ─────────────────────────────────────────────────────────────────
+// Triggered by hovering a CategoryRow (level 2).
+// Uses group/cat on the parent <li> to isolate its own hover zone.
+
+const SubPanel = memo(({ subcategories, topSlug, catSlug, openLeft, isSubActive }) => {
   if (!subcategories?.length) return null;
-  return (
-    <div className="absolute left-full top-0 hidden group-hover/category:block pl-1 z-50">
-      <ul className="bg-popover border border-border rounded-md shadow-lg min-w-[200px] py-1.5">
-        {subcategories.map((sub) => (
-          <li key={sub.id} className="group/subcategory">
-            <Link
-              to={`/browse/${categorySlug}/${subCategorySlug}/${sub.slug}`}
-              className={`${subItemStyles} relative ${
-                isEventTypeActive(categorySlug, subCategorySlug, sub.slug)
-                  ? "text-foreground bg-accent"
-                  : "text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              {sub.name}
-              <span
-                className={`${subIndicator} ${
-                  isEventTypeActive(categorySlug, subCategorySlug, sub.slug)
-                    ? "w-[60%]"
-                    : "w-0 group-hover/subcategory:w-[60%]"
-                }`}
-              />
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
 
-/* --------------------------
-   Categories dropdown (subCategorySlug level)
----------------------------*/
-const CategoriesDropdown = ({ categories, categorySlug, isCategoryActive, isSubCategoryActive, isEventTypeActive, align = "left" }) => {
-  if (!categories?.length) return null;
-  return (
-    <div className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} hidden group-hover:block pt-1 z-50`}>
-      <ul className="bg-popover border border-border rounded-md shadow-lg min-w-[220px] py-1.5">
-        {categories.map((category) => (
-          <li key={category.id} className="relative group/category">
-            <Link
-              to={`/browse/${categorySlug}/${category.slug}`}
-              className={`${subItemStyles} relative justify-between ${
-                isSubCategoryActive(categorySlug, category.slug)
-                  ? "text-foreground bg-accent"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              }`}
-            >
-              {category.name}
-              {category.subcategories?.length > 0 && (
-                <ChevronDown className="h-3 w-3 rotate-[-90deg]" />
-              )}
-              <span
-                className={`${subIndicator} ${
-                  isSubCategoryActive(categorySlug, category.slug)
-                    ? "w-[60%]"
-                    : "w-0 group-hover/category:w-[60%]"
-                }`}
-              />
-            </Link>
-            <SubcategoryDropdown
-              subcategories={category.subcategories}
-              categorySlug={categorySlug}
-              subCategorySlug={category.slug}
-              isEventTypeActive={isEventTypeActive}
-            />
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
-
-/* --------------------------
-   Main Navbar
----------------------------*/
-const Navbar = () => {
-  const { isCategoryActive, isSubCategoryActive, isEventTypeActive, pathname } = useActiveHelpers();
+  // Position: fly left or right of the category row
+  const panelPos   = openLeft ? "right-full top-0 mr-0" : "left-full top-0 ml-0";
+  // Invisible hover bridge fills the gap between the row and the panel
+  const bridgePos  = openLeft ? "right-0 translate-x-full" : "left-0 -translate-x-full";
 
   return (
-    <nav className="w-full">
-      <Container>
-        <div className="flex items-center h-12 w-full relative border-b border-border">
-          <ul className="flex items-center h-full w-full">
-            {/* All Events */}
-            <li className="h-full group">
+    // Hidden by default; shown when parent <li class="group/cat"> is hovered
+    <div className={`absolute z-[70] ${panelPos} hidden group-hover/cat:block`}>
+      {/* Hover bridge — covers the gap so mouse can travel without losing hover */}
+      <div className={`absolute inset-y-0 w-3 ${bridgePos}`} />
+
+      <ul className="bg-popover border border-border rounded-none shadow-xl min-w-[200px] py-1">
+        {subcategories.map((sub) => {
+          const active = isSubActive(topSlug, catSlug, sub.slug);
+          return (
+            <li key={sub.id}>
               <Link
-                to="/browse"
-                className={`${navItemStyles} ${
-                  pathname === "/browse"
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                to={`/browse/${topSlug}/${catSlug}/${sub.slug}`}
+                className={[
+                  "flex items-center px-4 py-2 text-xs whitespace-nowrap ",
+                  active
+                    ? "bg-accent text-primary font-medium"
+                    : "text-foreground hover:bg-accent ",
+                ].join(" ")}
               >
-                All Events
-                <span
-                  className={`${mainIndicator} ${
-                    pathname === "/browse"
-                      ? "w-[70%]"
-                      : "w-0 group-hover:w-[60%]"
-                  }`}
-                />
+                {sub.name}
               </Link>
             </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+});
+SubPanel.displayName = "SubPanel";
 
-            {/* Visible Nav Items */}
-            {visibleItems.map((item) => (
-              <li key={item.id} className="h-full group relative">
-                <Link
-                  to={`/browse/${item.slug}`}
-                  className={`${navItemStyles} ${
-                    isCategoryActive(item.slug)
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {item.name}
-                  <span
-                    className={`${mainIndicator} ${
-                      isCategoryActive(item.slug)
-                        ? "w-[70%]"
-                        : "w-0 group-hover:w-[60%]"
-                    }`}
-                  />
-                </Link>
+// ─────────────────────────────────────────────────────────────────
+// LEVEL 2 — Category row inside a top-level panel
+// ─────────────────────────────────────────────────────────────────
+// This <li> carries `group/cat` so SubPanel knows when to appear.
+// It detects viewport space to decide which side SubPanel opens on.
 
-                <CategoriesDropdown
-                  categories={item.categories}
-                  categorySlug={item.slug}
-                  isCategoryActive={isCategoryActive}
-                  isSubCategoryActive={isSubCategoryActive}
-                  isEventTypeActive={isEventTypeActive}
-                  align="left"
-                />
-              </li>
+const CategoryRow = memo(({ category, topSlug, isCatActive, isSubActive }) => {
+  const { ref, openLeft, detect } = useFlyoutSide(208);
+  const hasSubs = !!category.subcategories?.length;
+  const active  = isCatActive(topSlug, category.slug);
+
+  return (
+    // group/cat — scoped group for level-3 SubPanel hover trigger
+    <li ref={ref} className="relative group/cat">
+      <Link
+        to={`/browse/${topSlug}/${category.slug}`}
+        className={[
+          "flex items-center justify-between gap-4 px-4 py-2 text-xs whitespace-nowrap ",
+          active
+            ? "bg-accent text-primary font-medium"
+            : "text-foreground hover:bg-accent ",
+        ].join(" ")}
+      >
+        <span>{category.name}</span>
+        {hasSubs && (
+          openLeft
+            ? <ChevronLeft className="h-3 w-3 shrink-0 opacity-50" />
+            : <ChevronRight className="h-3 w-3 shrink-0 opacity-50" />
+        )}
+      </Link>
+
+      {/* Level 3 panel */}
+      {hasSubs && (
+        <SubPanel
+          subcategories={category.subcategories}
+          topSlug={topSlug}
+          catSlug={category.slug}
+          openLeft={openLeft}
+          isSubActive={isSubActive}
+        />
+      )}
+    </li>
+  );
+});
+CategoryRow.displayName = "CategoryRow";
+
+// ─────────────────────────────────────────────────────────────────
+// LEVEL 2 panel container — drops below a top-level nav item
+// ─────────────────────────────────────────────────────────────────
+// Hidden by default; shown when parent <li class="group/top"> is hovered.
+// `align` controls whether the panel aligns to the left or right edge.
+
+const CategoryPanel = memo(({ categories, topSlug, align = "left", isCatActive, isSubActive }) => {
+  if (!categories?.length) return null;
+
+  const edgeClass = align === "right" ? "right-0" : "left-0";
+
+  return (
+    // Shown when the grandparent group/top <li> is hovered
+    <div className={`absolute top-full ${edgeClass} z-50 pt-0 hidden group-hover/top:block`}>
+      <ul className="bg-popover border border-border rounded-none shadow-xl min-w-[220px] py-1">
+        {categories.map((cat) => (
+          <CategoryRow
+            key={cat.id}
+            category={cat}
+            topSlug={topSlug}
+            isCatActive={isCatActive}
+            isSubActive={isSubActive}
+          />
+        ))}
+      </ul>
+    </div>
+  );
+});
+CategoryPanel.displayName = "CategoryPanel";
+
+// ─────────────────────────────────────────────────────────────────
+// LEVEL 1 — Inline desktop nav item
+// ─────────────────────────────────────────────────────────────────
+// This <li> carries `group/top` — the scope for showing CategoryPanel.
+
+const DesktopNavItem = memo(
+  forwardRef(({ item, isTopActive, isCatActive, isSubActive, hidden }, ref) => {
+    const active = isTopActive(item.slug);
+
+    return (
+      // group/top — scoped group for level-2 CategoryPanel hover trigger
+      <li
+        ref={ref}
+        style={hidden ? { visibility: "hidden", position: "absolute", pointerEvents: "none" } : undefined}
+        className="relative group/top h-full shrink-0"
+      >
+        <Link
+          to={`/browse/${item.slug}`}
+          className={[
+            "relative flex items-center h-full px-3.5 text-xs font-medium tracking-wide",
+            "whitespace-nowrap  select-none",
+            active ? "text-primary" : "text-foreground",
+          ].join(" ")}
+        >
+          {item.name}
+          <span
+            className={[
+              "absolute bottom-0 left-1/2 -translate-x-1/2 h-px bg-primary",
+              "transition-all duration-300 origin-center",
+              active ? "w-[70%]" : "w-0 group-hover/top:w-[60%]",
+            ].join(" ")}
+          />
+        </Link>
+
+        {/* Level 2 panel */}
+        <CategoryPanel
+          categories={item.categories}
+          topSlug={item.slug}
+          align="left"
+          isCatActive={isCatActive}
+          isSubActive={isSubActive}
+        />
+      </li>
+    );
+  })
+);
+DesktopNavItem.displayName = "DesktopNavItem";
+
+// ─────────────────────────────────────────────────────────────────
+// "More" overflow — a row inside the More dropdown
+// ─────────────────────────────────────────────────────────────────
+// Uses group/moreitem to isolate the level-2 category panel.
+// The level-3 subcategory panels inside still use group/cat (isolated per CategoryRow).
+
+const MoreItem = memo(({ item, isTopActive, isCatActive, isSubActive }) => {
+  const { ref, openLeft, detect } = useFlyoutSide(224);
+  const hasCategories = !!item.categories?.length;
+  const active        = isTopActive(item.slug);
+
+  const panelPos  = openLeft ? "right-full top-0 mr-0" : "left-full top-0 ml-0";
+  const bridgePos = openLeft ? "right-0 translate-x-full" : "left-0 -translate-x-full";
+
+  return (
+    // group/moreitem — scoped group for the level-2 panel on More items
+    <li ref={ref} className="relative group/moreitem">
+      <Link
+        to={`/browse/${item.slug}`}
+        className={[
+          "flex items-center justify-between gap-4 px-4 py-2 text-xs whitespace-nowrap",
+          active
+            ? "bg-accent text-primary font-medium"
+            : "text-foreground hover:bg-accent ",
+        ].join(" ")}
+      >
+        <span>{item.name}</span>
+        {hasCategories && (
+          openLeft
+            ? <ChevronLeft className="h-3 w-3 shrink-0 opacity-50" />
+            : <ChevronRight className="h-3 w-3 shrink-0 opacity-50" />
+        )}
+      </Link>
+
+      {/* Level 2 panel for More items — uses CategoryRow inside, which provides group/cat for level 3 */}
+      {hasCategories && (
+        <div className={`absolute z-[70] ${panelPos} hidden group-hover/moreitem:block`}>
+          {/* Hover bridge */}
+          <div className={`absolute inset-y-0 w-3 ${bridgePos}`} />
+          <ul className="relative bg-popover border border-border rounded-none shadow-xl min-w-[220px] py-1">
+            {item.categories.map((cat) => (
+              <CategoryRow
+                key={cat.id}
+                category={cat}
+                topSlug={item.slug}
+                isCatActive={isCatActive}
+                isSubActive={isSubActive}
+              />
             ))}
-
-            {/* Others Dropdown */}
-            {hiddenItems.length > 0 && (
-              <li className="h-full group relative">
-                <span
-                  className={`${navItemStyles} text-muted-foreground hover:text-foreground`}
-                >
-                  Others
-                  <ChevronDown className="ml-1 h-3 w-3" />
-                  <span
-                    className={`${mainIndicator} w-0 group-hover:w-[60%]`}
-                  />
-                </span>
-
-                <div className="absolute top-full right-0 hidden group-hover:block pt-1 z-50">
-                  <ul className="bg-popover border border-border rounded-md shadow-lg min-w-[220px] py-1.5">
-                    {hiddenItems.map((item) => (
-                      <li key={item.id} className="relative group/service">
-                        <Link
-                          to={`/browse/${item.slug}`}
-                          className={`${subItemStyles} relative justify-between ${
-                            isCategoryActive(item.slug)
-                              ? "text-foreground bg-accent"
-                              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                          }`}
-                        >
-                          {item.name}
-                          {item.categories?.length > 0 && (
-                            <ChevronDown className="h-3 w-3 rotate-[-90deg]" />
-                          )}
-                          <span
-                            className={`${subIndicator} ${
-                              isCategoryActive(item.slug)
-                                ? "w-[60%]"
-                                : "w-0 group-hover/service:w-[60%]"
-                            }`}
-                          />
-                        </Link>
-
-                        {/* Categories for hidden items — fly out to the left */}
-                        {item.categories?.length > 0 && (
-                          <div className="absolute left-full top-0 hidden group-hover/service:block pl-1 z-50">
-                            <ul className="bg-popover border border-border rounded-md shadow-lg min-w-[200px] py-1.5">
-                              {item.categories.map((category) => (
-                                <li
-                                  key={category.id}
-                                  className="relative group/category"
-                                >
-                                  <Link
-                                    to={`/browse/${item.slug}/${category.slug}`}
-                                    className={`${subItemStyles} relative justify-between ${
-                                      isSubCategoryActive(
-                                        item.slug,
-                                        category.slug,
-                                      )
-                                        ? "text-foreground bg-accent"
-                                        : "text-muted-foreground hover:bg-accent"
-                                    }`}
-                                  >
-                                    {category.name}
-                                    {category.subcategories?.length > 0 && (
-                                      <ChevronDown className="h-3 w-3 rotate-[-90deg]" />
-                                    )}
-                                    <span
-                                      className={`${subIndicator} ${
-                                        isSubCategoryActive(
-                                          item.slug,
-                                          category.slug,
-                                        )
-                                          ? "w-[60%]"
-                                          : "w-0 group-hover/category:w-[60%]"
-                                      }`}
-                                    />
-                                  </Link>
-
-                                  <SubcategoryDropdown
-                                    subcategories={category.subcategories}
-                                    categorySlug={item.slug}
-                                    subCategorySlug={category.slug}
-                                    isEventTypeActive={isEventTypeActive}
-                                  />
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </li>
-            )}
           </ul>
         </div>
-      </Container>
-    </nav>
+      )}
+    </li>
+  );
+});
+MoreItem.displayName = "MoreItem";
+
+// ─────────────────────────────────────────────────────────────────
+// "More ▾" button — level-1 overflow dropdown
+// ─────────────────────────────────────────────────────────────────
+// Desktop: hover to show overflow panel.
+// onMoreClick: called on click — used to open the mobile drawer.
+
+const MoreDropdown = memo(({ items, isTopActive, isCatActive, isSubActive, onMoreClick }) => {
+  if (!items.length) return null;
+
+  return (
+    // group/top — hover opens the panel on desktop
+    <li className="relative group/top h-full shrink-0 ml-1">
+      <button
+        type="button"
+        aria-haspopup="true"
+        aria-label="More categories"
+        onClick={onMoreClick}
+        className={[
+          "relative flex items-center gap-1 h-full px-3.5 text-xs font-medium tracking-wide",
+          "whitespace-nowrap select-none cursor-pointer",
+          "text-foreground ",
+        ].join(" ")}
+      >
+        More
+        <ChevronDown className="h-3 w-3 opacity-60" />
+        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-px bg-primary transition-all duration-300 origin-center w-0 group-hover/top:w-[60%]" />
+      </button>
+
+      {/* Desktop hover panel */}
+      <div className="absolute top-full right-0 z-50 pt-0 hidden group-hover/top:block">
+        <ul className="bg-popover border border-border rounded-none shadow-xl min-w-[220px] py-1">
+          {items.map((item) => (
+            <MoreItem
+              key={item.id}
+              item={item}
+              isTopActive={isTopActive}
+              isCatActive={isCatActive}
+              isSubActive={isSubActive}
+            />
+          ))}
+        </ul>
+      </div>
+    </li>
+  );
+});
+MoreDropdown.displayName = "MoreDropdown";
+
+// ─────────────────────────────────────────────────────────────────
+// MOBILE — Drawer + Nested Accordion
+// ─────────────────────────────────────────────────────────────────
+
+const MobileSubItem = memo(({ sub, topSlug, catSlug, isSubActive, onClose }) => {
+  const active = isSubActive(topSlug, catSlug, sub.slug);
+  return (
+    <li>
+      <Link
+        to={`/browse/${topSlug}/${catSlug}/${sub.slug}`}
+        onClick={onClose}
+        className={[
+          "block pl-14 pr-4 py-2.5 text-xs ",
+          active ? "text-primary font-medium" : "text-foreground ",
+        ].join(" ")}
+      >
+        {sub.name}
+      </Link>
+    </li>
+  );
+});
+MobileSubItem.displayName = "MobileSubItem";
+
+const MobileCatItem = memo(({ category, topSlug, isCatActive, isSubActive, onClose }) => {
+  const [open, setOpen] = useState(false);
+  const hasSubs = !!category.subcategories?.length;
+  const active  = isCatActive(topSlug, category.slug);
+
+  return (
+    <li className="border-b border-border/25 last:border-0">
+      <div className="flex items-center pl-8 pr-2">
+        <Link
+          to={`/browse/${topSlug}/${category.slug}`}
+          onClick={onClose}
+          className={[
+            "flex-1 py-2.5 text-xs ",
+            active ? "text-primary font-medium" : "text-foreground ",
+          ].join(" ")}
+        >
+          {category.name}
+        </Link>
+        {hasSubs && (
+          <button
+            type="button"
+            onClick={() => setOpen((p) => !p)}
+            className="flex items-center justify-center w-9 h-9 text-foreground  transition-colors rounded-none hover:bg-accent"
+            aria-label={open ? "Collapse" : "Expand"}
+          >
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+          </button>
+        )}
+      </div>
+
+      {hasSubs && open && (
+        <ul className="border-t border-border/20 bg-muted/20">
+          {category.subcategories.map((sub) => (
+            <MobileSubItem
+              key={sub.id}
+              sub={sub}
+              topSlug={topSlug}
+              catSlug={category.slug}
+              isSubActive={isSubActive}
+              onClose={onClose}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+});
+MobileCatItem.displayName = "MobileCatItem";
+
+const MobileTopItem = memo(({ item, isTopActive, isCatActive, isSubActive, onClose }) => {
+  const [open, setOpen]  = useState(false);
+  const hasCategories    = !!item.categories?.length;
+  const active           = isTopActive(item.slug);
+
+  return (
+    <li className="border-b border-border last:border-0">
+      <div className="flex items-center pr-2">
+        <Link
+          to={`/browse/${item.slug}`}
+          onClick={onClose}
+          className={[
+            "flex-1 px-4 py-3.5 text-sm font-medium ",
+            active ? "text-primary" : "text-foreground ",
+          ].join(" ")}
+        >
+          {item.name}
+        </Link>
+        {hasCategories && (
+          <button
+            type="button"
+            onClick={() => setOpen((p) => !p)}
+            className="flex items-center justify-center w-10 h-10 text-foreground  transition-colors rounded-none hover:bg-accent"
+            aria-label={open ? `Collapse ${item.name}` : `Expand ${item.name}`}
+          >
+            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+          </button>
+        )}
+      </div>
+
+      {hasCategories && open && (
+        <ul className="border-t border-border/30 bg-muted/15">
+          {item.categories.map((cat) => (
+            <MobileCatItem
+              key={cat.id}
+              category={cat}
+              topSlug={item.slug}
+              isCatActive={isCatActive}
+              isSubActive={isSubActive}
+              onClose={onClose}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+});
+MobileTopItem.displayName = "MobileTopItem";
+
+const MobileDrawer = memo(({ open, onClose, pathname, isTopActive, isCatActive, isSubActive }) => {
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  const prevPath = useRef(pathname);
+  useEffect(() => {
+    if (prevPath.current !== pathname) {
+      prevPath.current = pathname;
+      onClose();
+    }
+  }, [pathname, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Browse categories"
+        className="fixed inset-y-0 left-0 z-50 flex flex-col w-full max-w-[320px] bg-background border-r border-border shadow-2xl"
+      >
+        <div className="flex items-center justify-between px-4 h-14 border-b border-border shrink-0 bg-background">
+          <span className="text-sm font-semibold text-primary tracking-wide">Browse Events</span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close menu"
+            className="flex items-center justify-center w-8 h-8 rounded-none text-foreground  hover:bg-accent transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="border-b border-border">
+            <Link
+              to="/browse"
+              onClick={onClose}
+              className={[
+                "flex items-center px-4 py-3.5 text-sm font-medium ",
+                pathname === "/browse" ? "text-primary" : "text-foreground ",
+              ].join(" ")}
+            >
+              All Events
+            </Link>
+          </div>
+
+          <ul>
+            {NAV_ITEMS.map((item) => (
+              <MobileTopItem
+                key={item.id}
+                item={item}
+                isTopActive={isTopActive}
+                isCatActive={isCatActive}
+                isSubActive={isSubActive}
+                onClose={onClose}
+              />
+            ))}
+          </ul>
+        </div>
+      </div>
+    </>
+  );
+});
+MobileDrawer.displayName = "MobileDrawer";
+
+// ─────────────────────────────────────────────────────────────────
+// NAVBAR (main export)
+// ─────────────────────────────────────────────────────────────────
+
+const Navbar = () => {
+  const { pathname, isTopActive, isCatActive, isSubActive } = useRouteActive();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const containerRef = useRef(null);
+  const anchorRef    = useRef(null);
+  const itemRefs     = useRef([]);
+
+  const visibleCount  = useNavOverflow(containerRef, anchorRef, itemRefs);
+  const overflowItems = NAV_ITEMS.slice(visibleCount);
+  const hasOverflow   = overflowItems.length > 0;
+
+  const openDrawer  = useCallback(() => setDrawerOpen(true), []);
+  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+
+  return (
+    <>
+      <nav className="w-full" aria-label="Category navigation">
+        <Container>
+
+          {/* ── Desktop ─────────────────────────────────────── */}
+          <div
+            ref={containerRef}
+            className="hidden sm:flex items-center h-11 w-full border-b border-border"
+          >
+            <ul className="flex items-center h-full w-full min-w-0">
+
+              {/* "All Events" anchor — always visible, measured for overflow calc */}
+              <li ref={anchorRef} className="relative group/top h-full shrink-0">
+                <Link
+                  to="/browse"
+                  className={[
+                    "relative flex items-center h-full px-3.5 text-xs font-medium tracking-wide",
+                    "whitespace-nowrap  select-none",
+                    pathname === "/browse" ? "text-primary" : "text-foreground ",
+                  ].join(" ")}
+                >
+                  All Events
+                  <span
+                    className={[
+                      "absolute bottom-0 left-1/2 -translate-x-1/2 h-px bg-primary",
+                      "transition-all duration-300 origin-center",
+                      pathname === "/browse" ? "w-[70%]" : "w-0 group-hover/top:w-[60%]",
+                    ].join(" ")}
+                  />
+                </Link>
+              </li>
+
+              {/* All nav items — hidden ones stay in DOM for measurement */}
+              {NAV_ITEMS.map((item, i) => (
+                <DesktopNavItem
+                  key={item.id}
+                  ref={(el) => { itemRefs.current[i] = el; }}
+                  item={item}
+                  isTopActive={isTopActive}
+                  isCatActive={isCatActive}
+                  isSubActive={isSubActive}
+                  hidden={i >= visibleCount}
+                />
+              ))}
+
+              {/* More dropdown */}
+              {hasOverflow && (
+                <MoreDropdown
+                  items={overflowItems}
+                  isTopActive={isTopActive}
+                  isCatActive={isCatActive}
+                  isSubActive={isSubActive}
+                  onMoreClick={openDrawer}
+                />
+              )}
+
+            </ul>
+          </div>
+
+          {/* ── Mobile ──────────────────────────────────────── */}
+          <div className="flex sm:hidden items-center justify-between h-11 border-b border-border px-1">
+            <Link
+              to="/browse"
+              className={[
+                "text-xs font-medium tracking-wide ",
+                pathname === "/browse" ? "text-primary" : "text-foreground ",
+              ].join(" ")}
+            >
+              All Events
+            </Link>
+
+            <button
+              type="button"
+              onClick={openDrawer}
+              aria-label="Browse categories"
+              className="flex items-center gap-1.5 h-full px-3 text-xs font-medium text-foreground  transition-colors border-l border-border ml-2"
+            >
+              Browse
+              <ChevronDown className="h-3 w-3 opacity-60" />
+            </button>
+          </div>
+
+        </Container>
+      </nav>
+
+      <MobileDrawer
+        open={drawerOpen}
+        onClose={closeDrawer}
+        pathname={pathname}
+        isTopActive={isTopActive}
+        isCatActive={isCatActive}
+        isSubActive={isSubActive}
+      />
+    </>
   );
 };
 
