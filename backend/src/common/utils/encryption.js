@@ -43,11 +43,14 @@ const hashToken = (token) => {
 };
 
 /**
- * Generate a 6-digit OTP
- * @returns {string} 6-digit OTP
+ * Generate a cryptographically secure 6-digit OTP.
+ * FIX: was Math.floor(100000 + Math.random() * 900000) — Math.random() is NOT
+ *      cryptographically secure and can be predicted by an attacker.
+ *      crypto.randomInt(min, max) uses OS CSPRNG, making the OTP unpredictable.
+ * @returns {string} 6-digit zero-padded OTP
  */
 const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 1000000).toString();
 };
 
 /**
@@ -59,6 +62,20 @@ const getOTPExpiry = (minutes = 10) => {
   return new Date(Date.now() + minutes * 60 * 1000);
 };
 
+/**
+ * Generate N recovery codes in XXXX-XXXX format
+ * @param {number} count
+ * @returns {string[]}
+ */
+const generateRecoveryCodes = (count = 8) => {
+  return Array.from({ length: count }, () =>
+    generateSecureToken(4)
+      .toUpperCase()
+      .match(/.{1,4}/g)
+      .join('-'),
+  );
+};
+
 module.exports = {
   hashPassword,
   comparePassword,
@@ -66,4 +83,5 @@ module.exports = {
   hashToken,
   generateOTP,
   getOTPExpiry,
+  generateRecoveryCodes,
 };

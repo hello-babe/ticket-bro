@@ -18,6 +18,7 @@ const {
   hashToken,
   generateOTP,
   getOTPExpiry,
+  generateRecoveryCodes,
 } = require("../../common/utils/encryption");
 const {
   generateTokenPair,
@@ -494,12 +495,7 @@ class AuthService {
       length: 20,
     });
 
-    const recoveryCodes = Array.from({ length: 8 }, () =>
-      generateSecureToken(4)
-        .toUpperCase()
-        .match(/.{1,4}/g)
-        .join("-"),
-    );
+    const recoveryCodes = generateRecoveryCodes(8);
 
     const qrCodeDataURL = await QRCode.toDataURL(secret.otpauth_url);
     await authRepository.updateUser(userId, { twoFactorSecret: secret.base32 });
@@ -527,12 +523,7 @@ class AuthService {
     if (!isValid)
       throw new BadRequestError("Invalid 2FA token. Please try again.");
 
-    const recoveryCodes = Array.from({ length: 8 }, () =>
-      generateSecureToken(4)
-        .toUpperCase()
-        .match(/.{1,4}/g)
-        .join("-"),
-    );
+    const recoveryCodes = generateRecoveryCodes(8);
     const hashedRecoveryCodes = await Promise.all(
       recoveryCodes.map((c) => hashPassword(c)),
     );
@@ -627,6 +618,22 @@ class AuthService {
       user,
       tokens: { ...tokens, expiresIn: authConfig.jwt.accessToken.expiresIn },
     });
+  }
+
+  // ── Revoke Single Session ────────────────────────────────────────────────
+
+  async revokeSession(userId, sessionId) {
+    const session = await authRepository.findSessionById(sessionId);
+    if (!session) {
+      throw new NotFoundError('Session not found.');
+    }
+    // Ownership check — users can only revoke their own sessions
+    if (session.userId.toString() !== userId.toString()) {
+      throw new ForbiddenError('You do not have permission to revoke this session.');
+    }
+    await session.revoke('manual_revoke');
+    logger.info(`Session ${sessionId} revoked by user ${userId}`);
+    return { message: 'Session revoked successfully.' };
   }
 
   // ── Private Helpers ───────────────────────────────────────────────────────

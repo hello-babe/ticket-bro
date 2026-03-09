@@ -36,7 +36,7 @@ const setRefreshTokenCookie = (res, refreshToken) => {
     secure: authConfig.cookie.secure,
     sameSite: authConfig.cookie.sameSite,
     maxAge: authConfig.cookie.maxAge,
-    path: '/',  // FIX: was path-restricted — now all /api/* paths receive the cookie
+    path: '/',  // FIX: scoped to all paths so logout/refresh both receive it
   });
 };
 
@@ -50,7 +50,7 @@ const clearRefreshTokenCookie = (res) => {
     httpOnly: authConfig.cookie.httpOnly,
     secure: authConfig.cookie.secure,
     sameSite: authConfig.cookie.sameSite,
-    path: '/',  // FIX: must match the path used in setRefreshTokenCookie
+    path: '/',
   });
 };
 
@@ -66,7 +66,6 @@ const validateOrThrow = (validator, data) => {
  * Strip refreshToken from the response body before sending.
  * The refresh token is already delivered via httpOnly cookie — including it
  * in the JSON body would expose it to JavaScript (XSS risk).
- * FIX: prevents double-delivery of the refresh token.
  */
 const sanitiseTokenResponse = (result) => {
   if (result && result.tokens) {
@@ -80,8 +79,6 @@ const sanitiseTokenResponse = (result) => {
 
 /**
  * @route   POST /api/v1/auth/register
- * @desc    Register a new user
- * @access  Public
  */
 const register = async (req, res) => {
   const validatedData = validateOrThrow(validateRegister, req.body);
@@ -100,8 +97,6 @@ const register = async (req, res) => {
 
 /**
  * @route   POST /api/v1/auth/login
- * @desc    Login with email and password
- * @access  Public
  */
 const login = async (req, res) => {
   const validatedData = validateOrThrow(validateLogin, req.body);
@@ -110,7 +105,6 @@ const login = async (req, res) => {
 
   const result = await authService.login(loginDTO, meta);
 
-  // If 2FA required, return partial response — no tokens issued yet
   if (result.requiresTwoFactor) {
     return sendSuccess(res, result.message, { requiresTwoFactor: true, email: result.email });
   }
@@ -122,11 +116,8 @@ const login = async (req, res) => {
 
 /**
  * @route   POST /api/v1/auth/logout
- * @desc    Logout current session
- * @access  Private
  */
 const logout = async (req, res) => {
-  // Read token from cookie (preferred) or body fallback
   const refreshToken = req.cookies?.refreshToken || req.body.refreshToken || req.refreshToken;
   await authService.logout(refreshToken);
   clearRefreshTokenCookie(res);
@@ -135,8 +126,6 @@ const logout = async (req, res) => {
 
 /**
  * @route   POST /api/v1/auth/logout-all
- * @desc    Logout from all devices
- * @access  Private
  */
 const logoutAll = async (req, res) => {
   await authService.logoutAll(req.user._id.toString());
@@ -146,12 +135,8 @@ const logoutAll = async (req, res) => {
 
 /**
  * @route   POST /api/v1/auth/refresh-token
- * @desc    Refresh access and refresh tokens
- * @access  Public (requires refresh token cookie or body)
  */
 const refreshToken = async (req, res) => {
-  // FIX: prefer cookie — the browser sends it automatically.
-  // Also accept body for clients that can't use cookies (e.g. mobile).
   const token = req.cookies?.refreshToken || req.body.refreshToken;
   if (!token) throw new BadRequestError('Refresh token is required.');
 
@@ -160,7 +145,6 @@ const refreshToken = async (req, res) => {
 
   setRefreshTokenCookie(res, tokens.refreshToken);
 
-  // FIX: only return the accessToken in the body — refreshToken is in the cookie
   return sendSuccess(res, 'Token refreshed successfully.', {
     accessToken: tokens.accessToken,
     tokenType: 'Bearer',
@@ -170,8 +154,6 @@ const refreshToken = async (req, res) => {
 
 /**
  * @route   GET /api/v1/auth/me
- * @desc    Get current authenticated user
- * @access  Private
  */
 const getMe = async (req, res) => {
   const user = await authService.getMe(req.user._id.toString());
@@ -181,8 +163,6 @@ const getMe = async (req, res) => {
 /**
  * @route   GET /api/v1/auth/verify-email/:token
  * @route   POST /api/v1/auth/verify-email
- * @desc    Verify email address
- * @access  Public
  */
 const verifyEmail = async (req, res) => {
   const token = req.params.token || req.body.token || req.query.token;
@@ -194,8 +174,6 @@ const verifyEmail = async (req, res) => {
 
 /**
  * @route   POST /api/v1/auth/resend-verification
- * @desc    Resend email verification
- * @access  Public
  */
 const resendVerification = async (req, res) => {
   const validatedData = validateOrThrow(validateResendVerification, req.body);
@@ -205,8 +183,6 @@ const resendVerification = async (req, res) => {
 
 /**
  * @route   POST /api/v1/auth/forgot-password
- * @desc    Request password reset email
- * @access  Public
  */
 const forgotPassword = async (req, res) => {
   const validatedData = validateOrThrow(validateForgotPassword, req.body);
@@ -217,20 +193,18 @@ const forgotPassword = async (req, res) => {
 
 /**
  * @route   POST /api/v1/auth/reset-password
- * @desc    Reset password with token
- * @access  Public
  */
 const resetPassword = async (req, res) => {
   const validatedData = validateOrThrow(validateResetPassword, req.body);
   const dto = new ResetPasswordDTO(validatedData);
   const result = await authService.resetPassword(dto.token, dto.password);
+  // FIX: clear cookie on reset — all existing sessions are revoked server-side
+  clearRefreshTokenCookie(res);
   return sendSuccess(res, result.message);
 };
 
 /**
  * @route   POST /api/v1/auth/change-password
- * @desc    Change password (authenticated)
- * @access  Private
  */
 const changePassword = async (req, res) => {
   const validatedData = validateOrThrow(validateChangePassword, req.body);
@@ -246,8 +220,6 @@ const changePassword = async (req, res) => {
 
 /**
  * @route   GET /api/v1/auth/sessions
- * @desc    Get all active sessions
- * @access  Private
  */
 const getActiveSessions = async (req, res) => {
   const sessions = await authService.getActiveSessions(req.user._id.toString());
@@ -255,9 +227,16 @@ const getActiveSessions = async (req, res) => {
 };
 
 /**
+ * @route   DELETE /api/v1/auth/sessions/:sessionId
+ */
+const revokeSession = async (req, res) => {
+  const { sessionId } = req.params;
+  await authService.revokeSession(req.user._id.toString(), sessionId);
+  return sendSuccess(res, 'Session revoked successfully.');
+};
+
+/**
  * @route   POST /api/v1/auth/2fa/setup
- * @desc    Setup 2FA — generate QR code and secret
- * @access  Private
  */
 const setup2FA = async (req, res) => {
   const result = await authService.setupTwoFactor(req.user._id.toString());
@@ -266,8 +245,6 @@ const setup2FA = async (req, res) => {
 
 /**
  * @route   POST /api/v1/auth/2fa/enable
- * @desc    Enable 2FA after scanning QR
- * @access  Private
  */
 const enable2FA = async (req, res) => {
   const validatedData = validateOrThrow(validateTwoFactorVerify, req.body);
@@ -277,8 +254,6 @@ const enable2FA = async (req, res) => {
 
 /**
  * @route   POST /api/v1/auth/2fa/disable
- * @desc    Disable 2FA
- * @access  Private
  */
 const disable2FA = async (req, res) => {
   const { password } = req.body;
@@ -289,8 +264,6 @@ const disable2FA = async (req, res) => {
 
 /**
  * @route   POST /api/v1/auth/2fa/verify
- * @desc    Verify OTP after login when 2FA is enabled
- * @access  Public
  */
 const verifyTwoFactor = async (req, res) => {
   const validatedData = validateOrThrow(validateVerifyOTP, req.body);
@@ -313,8 +286,6 @@ const verifyTwoFactor = async (req, res) => {
 
 /**
  * @route   GET /api/v1/auth/oauth/google/callback
- * @desc    Google OAuth callback
- * @access  OAuth
  */
 const googleOAuthCallback = async (req, res) => {
   const meta = getRequestMeta(req);
@@ -322,15 +293,12 @@ const googleOAuthCallback = async (req, res) => {
 
   setRefreshTokenCookie(res, result.tokens.refreshToken);
 
-  // FIX: only pass accessToken in URL (refresh token is in httpOnly cookie)
   const redirectUrl = `${env.FRONTEND_URL}/auth/oauth-success?token=${result.tokens.accessToken}`;
   return res.redirect(redirectUrl);
 };
 
 /**
  * @route   GET /api/v1/auth/oauth/facebook/callback
- * @desc    Facebook OAuth callback
- * @access  OAuth
  */
 const facebookOAuthCallback = async (req, res) => {
   const meta = getRequestMeta(req);
@@ -355,6 +323,7 @@ module.exports = {
   resetPassword,
   changePassword,
   getActiveSessions,
+  revokeSession,
   setup2FA,
   enable2FA,
   disable2FA,

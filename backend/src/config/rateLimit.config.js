@@ -67,10 +67,21 @@ const resendVerificationLimiter = createRateLimiter({
   max: authConfig.rateLimiting.resendVerification.max * devMultiplier,
 });
 
+// FIX: OTP endpoint rate limiter — prevents brute-force of 6-digit codes.
+// A 6-digit code has 1,000,000 possibilities; without a rate limit an attacker
+// can try all combinations in minutes. 10 attempts per 15 minutes allows normal
+// users to retry a few times but stops automated attacks.
+const otpLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  max: 10 * devMultiplier,
+  message: 'Too many OTP attempts. Please try again after 15 minutes.',
+});
+
 module.exports = {
   globalLimiter,
   loginLimiter,
   forgotPasswordLimiter,
   resendVerificationLimiter,
+  otpLimiter,
   createRateLimiter,
 };
