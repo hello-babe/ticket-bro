@@ -33,7 +33,7 @@ const adminRoutes = require("./modules/admins/admin.routes");
 const auditRoutes = require("./modules/auditLogs/audit.routes");
 
 // ─── ROLES ───────────────────────────────────────────────────────────────────
-const ROLES = require("./common/constants/roles");
+const { ROLES } = require("./common/constants/roles");
 // ROLES.USER, ROLES.ORGANIZER, ROLES.ADMIN
 
 // ════════════════════════════════════════════════════════════════════════════

@@ -6,9 +6,9 @@
 //
 // Both systems use the same Redux store (authSlice) and this hook.
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   registerUser,
   loginUser,
@@ -37,9 +37,9 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isLoading       = useSelector(selectIsLoading);
 
-  // Silent re-auth on page reload:
-  // Access token is in-memory so it's gone after a reload.
-  // sessionStorage still has the user object → call fetchMe() which will 401,
+  // Silent re-auth on page reload / new tab.
+  // Access token is in-memory so it's gone after reload.
+  // localStorage still has the user object → call fetchMe() which will 401,
   // the axios interceptor fires POST /auth/refresh-token (httpOnly cookie sent
   // automatically), gets a new access token, retries GET /auth/me — transparent.
   useEffect(() => {
@@ -67,6 +67,7 @@ export const useAuthContext = () => {
 export const useAuth = () => {
   const dispatch       = useDispatch();
   const navigate       = useNavigate();
+  const location       = useLocation();
   const user           = useSelector(selectUser);
   const isAuthenticated= useSelector(selectIsAuthenticated);
   const isLoading      = useSelector(selectIsLoading);
@@ -75,28 +76,42 @@ export const useAuth = () => {
   const twoFactorEmail = useSelector(select2FAEmail);
 
   // ── register ────────────────────────────────────────────────────────────────
-  // After register, navigate to the verify-notice screen.
-  // Modal system: ?auth=verify-notice  |  Page system: caller handles navigation
   const register = async (data) => {
     const result = await dispatch(registerUser(data));
     if (!result.error) {
-      // Navigate to verify-notice in the modal system.
-      // Page system (RegisterPage) overrides navigation after calling dispatch directly.
       navigate(authConfig.routes.verifyEmailNotice);
     }
     return result;
   };
 
   // ── login ───────────────────────────────────────────────────────────────────
-  // After login, navigate to OTP (if 2FA) or home.
-  // Modal system: ?auth=otp  |  Page system: caller handles navigation
+  // FIX: preserves `from` state so ProtectedRoute can redirect back after login.
+  // Previously, login always navigated to home, so users landing on a protected
+  // page via a direct link would end up on home after signing in.
   const login = async (data) => {
     const result = await dispatch(loginUser(data));
     if (!result.error) {
       if (result.payload?.requiresTwoFactor) {
-        navigate(authConfig.routes.otp);
+        // Preserve `from` in the OTP route so we can redirect after 2FA
+        navigate(authConfig.routes.otp, { state: location.state });
       } else {
-        navigate(authConfig.routes.home);
+        // Redirect to where the user originally wanted to go
+        const from = location.state?.from?.pathname || authConfig.routes.home;
+        navigate(from, { replace: true });
+      }
+    }
+    return result;
+  };
+
+  // ── loginAndRedirect ────────────────────────────────────────────────────────
+  // Explicit redirect-to destination (used by System B page routes).
+  const loginAndRedirect = async (data, redirectTo) => {
+    const result = await dispatch(loginUser(data));
+    if (!result.error) {
+      if (result.payload?.requiresTwoFactor) {
+        navigate(authConfig.routes.pages.verifyOtp, { state: { from: { pathname: redirectTo } } });
+      } else {
+        navigate(redirectTo || authConfig.routes.home, { replace: true });
       }
     }
     return result;
@@ -113,32 +128,46 @@ export const useAuth = () => {
   const verify2FA = async (email, otp) => {
     const result = await dispatch(verifyTwoFactor({ email, otp }));
     if (!result.error) {
-      navigate(authConfig.routes.home);
+      const from = location.state?.from?.pathname || authConfig.routes.home;
+      navigate(from, { replace: true });
     }
     return result;
   };
 
   // ── verifyOTP ───────────────────────────────────────────────────────────────
   // Signature: verifyOTP({ email, otp }) — used by OTPVerificationPage (/auth/verify-otp)
-  // Just an object-destructure alias for verify2FA.
   const verifyOTP = async ({ email, otp }) => verify2FA(email, otp);
 
   // ── resend2FA ───────────────────────────────────────────────────────────────
-  // Resend OTP to the given email. Used by OTPVerification modal component.
   const resend2FA = async (email) => {
-    // authService doesn't have a dedicated resend-otp endpoint — calling login
-    // with an unknown password won't work. We use the resendVerification endpoint
-    // as a proxy, or expose a dedicated one. For now we just call the 2fa resend
-    // if the backend supports it, otherwise it's a no-op that shows toast.
     return authService.resendOTP?.(email) ?? Promise.resolve();
   };
 
   // ── hasRole ─────────────────────────────────────────────────────────────────
-  // hasRole('admin', 'super_admin') — checks if current user has any of the given roles
-  const hasRole = (...roles) => {
+  const hasRole = useCallback((...roles) => {
     if (!user) return false;
     return roles.includes(user.role);
-  };
+  }, [user]);
+
+  // ── hasPermission ───────────────────────────────────────────────────────────
+  // Lightweight client-side permission check (server always re-verifies).
+  const ORGANIZER_ROLES = ['organizer', 'admin', 'super_admin'];
+  const ADMIN_ROLES     = ['admin', 'super_admin'];
+
+  const hasPermission = useCallback((permission) => {
+    if (!user) return false;
+    switch (permission) {
+      case 'create:events':
+      case 'view:organizer_dashboard':
+        return ORGANIZER_ROLES.includes(user.role);
+      case 'manage:users':
+      case 'view:admin_dashboard':
+      case 'manage:roles':
+        return ADMIN_ROLES.includes(user.role);
+      default:
+        return user.role === 'super_admin';
+    }
+  }, [user]);
 
   return {
     // State
@@ -152,11 +181,13 @@ export const useAuth = () => {
     // Actions
     register,
     login,
+    loginAndRedirect,
     logout,
     verify2FA,
     verifyOTP,
     resend2FA,
     hasRole,
+    hasPermission,
     refreshProfile:  () => dispatch(fetchMe()),
     clearError:      () => dispatch(clearError()),
     clearTwoFactor:  () => dispatch(clearTwoFactor()),

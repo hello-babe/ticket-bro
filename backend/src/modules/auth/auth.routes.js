@@ -11,6 +11,7 @@ const {
   loginLimiter,
   forgotPasswordLimiter,
   resendVerificationLimiter,
+  otpLimiter,    // FIX: dedicated OTP limiter — prevents brute-force of 6-digit codes
 } = require('../../config/rateLimit.config');
 
 // ── Public Routes ─────────────────────────────────────────────────────────────
@@ -31,8 +32,8 @@ router.post('/login', loginLimiter, asyncHandler(controller.login));
 router.post('/refresh-token', asyncHandler(controller.refreshToken));
 
 /**
- * @route   POST /api/v1/auth/verify-email/:token
- * @route   POST /api/v1/auth/verify-email  (token in body)
+ * @route   GET  /api/v1/auth/verify-email/:token
+ * @route   POST /api/v1/auth/verify-email  (token in body or query)
  */
 router.get('/verify-email/:token', asyncHandler(controller.verifyEmail));
 router.post('/verify-email', asyncHandler(controller.verifyEmail));
@@ -54,8 +55,11 @@ router.post('/reset-password', asyncHandler(controller.resetPassword));
 
 /**
  * @route   POST /api/v1/auth/2fa/verify
+ * FIX: use otpLimiter (not loginLimiter) — a 6-digit OTP window is only valid for
+ * 10 minutes and has 10^6 possibilities. Without a tight rate limit, brute-force
+ * is feasible within that window.
  */
-router.post('/2fa/verify', loginLimiter, asyncHandler(controller.verifyTwoFactor));
+router.post('/2fa/verify', otpLimiter, asyncHandler(controller.verifyTwoFactor));
 
 // ── OAuth Routes ──────────────────────────────────────────────────────────────
 
@@ -119,6 +123,11 @@ router.post('/change-password', protect, asyncHandler(controller.changePassword)
  * @route   GET /api/v1/auth/sessions
  */
 router.get('/sessions', protect, asyncHandler(controller.getActiveSessions));
+
+/**
+ * @route   DELETE /api/v1/auth/sessions/:sessionId
+ */
+router.delete('/sessions/:sessionId', protect, asyncHandler(controller.revokeSession));
 
 /**
  * @route   POST /api/v1/auth/2fa/setup

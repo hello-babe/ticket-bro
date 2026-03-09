@@ -189,6 +189,10 @@ class AuthRepository {
     ).exec();
   }
 
+  async findSessionById(sessionId) {
+    return RefreshToken.findById(sessionId).exec();
+  }
+
   async getActiveUserSessions(userId) {
     return RefreshToken.find({
       userId,
