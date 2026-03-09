@@ -1,9 +1,11 @@
-const dns = require('node:dns');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
 'use strict';
 
+// DNS override must come after 'use strict'
+const dns = require('node:dns');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 const app = require('./app');
-const { connectDB } = require('./config/db.config');
+const { connectDB, disconnectDB } = require('./config/db.config');
 const { verifyConnection } = require('./infrastructure/mail/mailClient');
 const env = require('./config/env');
 const logger = require('./infrastructure/logger/logger');
@@ -46,7 +48,7 @@ const gracefulShutdown = async (signal) => {
   if (server) {
     server.close(async () => {
       logger.info('HTTP server closed');
-      const { disconnectDB } = require('./src/config/db.config');
+      // FIX: was require('./src/config/db.config') — wrong nested path
       await disconnectDB();
       logger.info('All connections closed. Exiting process.');
       process.exit(0);

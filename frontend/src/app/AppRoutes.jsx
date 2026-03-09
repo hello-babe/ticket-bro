@@ -275,6 +275,7 @@ const AppRoutes = () => (
         <Route path="/faq"     element={<FAQPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms"   element={<TermsPage />} />
+         <Route path="/events/create" element={<CreateEventPage />} />
       </Route>
 
       {/* ══════════════════════════════════════════════════════════
@@ -362,7 +363,7 @@ const AppRoutes = () => (
           PROTECTED — Organizer + Admin + Super Admin
       ══════════════════════════════════════════════════════════ */}
       <Route element={
-        <ProtectedRoute allowedRoles={[UserRole.ORGANIZER, UserRole.ADMIN, 'super_admin']} />
+        <ProtectedRoute allowedRoles={[UserRole.ORGANIZER, UserRole.ADMIN, UserRole.SUPER_ADMIN]} />
       }>
         <Route element={<OrganizerLayout />}>
           <Route path="/organizer">
@@ -390,7 +391,7 @@ const AppRoutes = () => (
           PROTECTED — Admin + Super Admin only
       ══════════════════════════════════════════════════════════ */}
       <Route element={
-        <ProtectedRoute allowedRoles={[UserRole.ADMIN, 'super_admin']} />
+        <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]} />
       }>
         <Route element={<AdminLayout />}>
           <Route path="/admin">
@@ -434,7 +435,8 @@ const AppRoutes = () => (
         <Route path="/404" element={<NotFoundPage />} />
         <Route path="/500" element={<ServerErrorPage />} />
         <Route path="/505" element={<HttpVersionNotSupportedPage />} />
-        
+        {/* FIX: wildcard — catches all unmatched URLs and shows 404 */}
+        <Route path="*" element={<Navigate to="/404" replace />} />
       </Route>
 
     </Routes>

@@ -16,11 +16,11 @@
 //                   → POST /auth/refresh-token (cookie auto-sent) → new access
 //                   token stored in memory → /auth/me retried → success.
 //
-// FIX: Previously stored both tokens in localStorage, exposing the 7-day
-// refresh token to any XSS payload. Now only non-sensitive data (user object)
-// is persisted in localStorage, which is safe and allows cross-tab auth.
+// Security note: Only the non-sensitive user object is in localStorage.
+// The access token never touches localStorage or sessionStorage.
+// The refresh token is httpOnly — completely invisible to JavaScript.
 
-import authConfig from "../config/auth.config";
+import authConfig from '../config/auth.config';
 
 const { user: USER_KEY } = authConfig.storage;
 
@@ -43,11 +43,14 @@ export const storageUtils = {
   // The refresh token lives ONLY in the httpOnly cookie set by the server.
   // These are no-ops — they exist only to avoid breaking call sites that
   // previously set/got the refresh token from localStorage.
-  getRefreshToken: () => null, // intentionally always null
-  setRefreshToken: (_token) => {}, // intentionally no-op
-  removeRefreshToken: () => {}, // intentionally no-op
+  getRefreshToken: () => null,  // intentionally always null
+  setRefreshToken: (_token) => {},  // intentionally no-op
+  removeRefreshToken: () => {},     // intentionally no-op
 
   // ── User (localStorage) ────────────────────────────────────────────────────
+  // Stored in localStorage so auth state survives page reload and persists
+  // across tabs. On restore, AuthContext calls fetchMe() to re-validate the
+  // session and get a fresh access token via the httpOnly cookie.
   getUser: () => {
     try {
       const raw = localStorage.getItem(USER_KEY);
@@ -63,7 +66,13 @@ export const storageUtils = {
       // localStorage may be unavailable in some private browsing modes
     }
   },
-  removeUser: () => localStorage.removeItem(USER_KEY),
+  removeUser: () => {
+    try {
+      localStorage.removeItem(USER_KEY);
+    } catch {
+      // ignore
+    }
+  },
 
   // ── Bulk helpers ──────────────────────────────────────────────────────────
   setTokens: ({ accessToken }) => {
@@ -79,7 +88,7 @@ export const storageUtils = {
 
   clearAll: () => {
     _accessToken = null;
-    localStorage.removeItem(USER_KEY);
+    try { localStorage.removeItem(USER_KEY); } catch { /* ignore */ }
     // Note: the httpOnly refresh token cookie is cleared by the backend on logout.
   },
 };

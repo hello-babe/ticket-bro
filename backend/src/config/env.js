@@ -11,7 +11,7 @@ const requiredEnvVars = [
   'MONGODB_URI',
 ];
 
-const _isDev = () => (process.env.NODE_ENV || 'development') === 'development';
+const _isDev  = () => (process.env.NODE_ENV || 'development') === 'development';
 const _isProd = () => (process.env.NODE_ENV || 'development') === 'production';
 const _isTest = () => (process.env.NODE_ENV || 'development') === 'test';
 
@@ -94,10 +94,11 @@ const env = {
   TWO_FACTOR_APP_NAME: process.env.TWO_FACTOR_APP_NAME || 'Ticket Bro',
 
   // Cookie — SECURE is forced true in production; developer opt-in for dev HTTPS
+  // FIX: COOKIE_SAME_SITE defaults to 'strict' (was 'lax' — allows CSRF on cross-site nav)
   COOKIE_SECRET: process.env.COOKIE_SECRET || 'cookie-secret',
   COOKIE_SECURE: _isProd() ? true : process.env.COOKIE_SECURE === 'true',
   COOKIE_HTTP_ONLY: process.env.COOKIE_HTTP_ONLY !== 'false',
-  COOKIE_SAME_SITE: process.env.COOKIE_SAME_SITE || 'lax',
+  COOKIE_SAME_SITE: process.env.COOKIE_SAME_SITE || 'strict',
 
   // Helpers
   isDevelopment: _isDev,

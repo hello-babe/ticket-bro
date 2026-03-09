@@ -26,7 +26,7 @@ import ResetPasswordForm  from './ResetPasswordForm';
 import OTPVerification   from './OTPVerification';
 
 import authService from '../../services/authService';
-import { selectRequires2FA, selectUser } from '../../store/slices/authSlice';
+import { selectRequires2FA, selectUser, selectAuthStatus } from '../../store/slices/authSlice';
 import authConfig from '../../config/auth.config';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -70,10 +70,19 @@ const AuthModal = () => {
   const authType     = searchParams.get('auth');
   const requires2FA  = useSelector(selectRequires2FA);
   const user         = useSelector(selectUser);
+  const authStatus   = useSelector(selectAuthStatus);
   const { isDark }   = useTheme();
 
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSent,    setResendSent]    = useState(false);
+
+  // ── Auto-close if session restored and user is now authenticated ─────────────
+  // Prevents modal from lingering after silent refresh completes
+  useEffect(() => {
+    if (authStatus === 'authenticated' && authType && authType !== 'verify-notice' && authType !== 'verify') {
+      closeModal();
+    }
+  }, [authStatus, authType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Close modal ─────────────────────────────────────────────────────────────
   const closeModal = () => {
@@ -119,6 +128,14 @@ const AuthModal = () => {
   };
 
   if (!authType) return null;
+
+  // ── Don't show auth modal while session restore is in progress ───────────────
+  // Prevents login modal flicker on page refresh for logged-in users.
+  if (authStatus === 'loading') return null;
+
+  // ── Don't show login/register if already authenticated ───────────────────────
+  const guestOnlyTypes = ['login', 'register', 'forgot', 'reset', 'otp'];
+  if (authStatus === 'authenticated' && guestOnlyTypes.includes(authType)) return null;
 
   // ── Render correct form/panel per ?auth= value ───────────────────────────────
   const renderContent = () => {

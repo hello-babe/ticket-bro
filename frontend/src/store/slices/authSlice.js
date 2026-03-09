@@ -114,6 +114,11 @@ const initialState = {
   // FIX: isAuthenticated starts false on reload even if we have a cached user.
   // We can't trust it until the server has validated the session via /me.
   isAuthenticated: false,
+  // authStatus: "loading" | "authenticated" | "guest"
+  // "loading"       — session restore in progress; block ALL auth-gated UI
+  // "authenticated" — fetchMe succeeded; user is logged in
+  // "guest"         — no session or fetchMe failed; show login/register
+  authStatus: persistedUser ? 'loading' : 'guest',
   isLoading: !!persistedUser, // show loading spinner while silent refresh is in flight
   error: null,
   requiresTwoFactor: false,
@@ -141,6 +146,7 @@ const authSlice = createSlice({
       const { user, accessToken } = action.payload;
       state.user = user;
       state.isAuthenticated = true;
+      state.authStatus = 'authenticated';
       state.error = null;
       storageUtils.setTokens({ accessToken });
       storageUtils.setUser(user);
@@ -175,9 +181,11 @@ const authSlice = createSlice({
         if (action.payload.requiresTwoFactor) {
           state.requiresTwoFactor = true;
           state.twoFactorEmail = action.payload.email;
+          state.authStatus = 'guest';
         } else {
           state.user = action.payload.user;
           state.isAuthenticated = true;
+          state.authStatus = 'authenticated';
           state.requiresTwoFactor = false;
           state.twoFactorEmail = null;
         }
@@ -197,6 +205,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.user = action.payload.user;
         state.isAuthenticated = true;
+        state.authStatus = 'authenticated';
         state.requiresTwoFactor = false;
         state.twoFactorEmail = null;
       })
@@ -209,6 +218,7 @@ const authSlice = createSlice({
     builder.addCase(logoutUser.fulfilled, (state) => {
       state.user = null;
       state.isAuthenticated = false;
+      state.authStatus = 'guest';
       state.requiresTwoFactor = false;
       state.twoFactorEmail = null;
       state.error = null;
@@ -219,16 +229,19 @@ const authSlice = createSlice({
     builder
       .addCase(fetchMe.pending, (state) => {
         state.isLoading = true;
+        state.authStatus = 'loading';
       })
       .addCase(fetchMe.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
+        state.authStatus = 'authenticated';
       })
       .addCase(fetchMe.rejected, (state) => {
         state.isLoading = false;
         state.user = null;
         state.isAuthenticated = false;
+        state.authStatus = 'guest';
       });
   },
 });
@@ -243,5 +256,7 @@ export const selectIsLoading = (state) => state.auth.isLoading;
 export const selectAuthError = (state) => state.auth.error;
 export const selectRequires2FA = (state) => state.auth.requiresTwoFactor;
 export const select2FAEmail = (state) => state.auth.twoFactorEmail;
+// "loading" | "authenticated" | "guest"
+export const selectAuthStatus = (state) => state.auth.authStatus;
 
 export default authSlice.reducer;
