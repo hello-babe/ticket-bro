@@ -364,7 +364,7 @@ const Header = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hidden sm:flex h-9 w-9"
+                  className="flex h-9 w-9"
                 >
                   {getThemeIcon()}
                 </Button>
