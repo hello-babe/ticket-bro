@@ -3,27 +3,18 @@ import PropTypes from "prop-types";
 import clsx from "clsx";
 import "@/styles/container.css";
 
+/**
+ * Responsive Container
+ * - Small / Tablet / Laptop → full width
+ * - Large screens → centered layout
+ */
+
 const Container = forwardRef(
-  (
-    {
-      children,
-      className = "",
-      fluid = false,
-      size = null,
-      noPadding = false,
-      as: Component = "div",
-      role = "region",
-      "aria-label": ariaLabel,
-      ...props
-    },
-    ref,
-  ) => {
+  ({ children, className = "", fluid = false, noPadding = false, as: Component = "div", role = "region", "aria-label": ariaLabel, ...props }, ref) => {
     const containerClasses = clsx(
-      !fluid && "container",
-      fluid && "container-fluid",
-      size && `container-${size}`,
+      fluid ? "container-fluid" : "container",
       noPadding && "container-no-padding",
-      className,
+      className
     );
 
     return (
@@ -37,7 +28,7 @@ const Container = forwardRef(
         {children}
       </Component>
     );
-  },
+  }
 );
 
 Container.displayName = "Container";
@@ -46,7 +37,6 @@ Container.propTypes = {
   children: PropTypes.node.isRequired,
   className: PropTypes.string,
   fluid: PropTypes.bool,
-  size: PropTypes.oneOf(["sm", "md", "lg", "xl", "xxl", null]),
   noPadding: PropTypes.bool,
   as: PropTypes.elementType,
   role: PropTypes.string,
@@ -56,7 +46,6 @@ Container.propTypes = {
 Container.defaultProps = {
   className: "",
   fluid: false,
-  size: null,
   noPadding: false,
   as: "div",
   role: "region",
