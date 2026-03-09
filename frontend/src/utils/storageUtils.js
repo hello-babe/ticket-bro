@@ -10,17 +10,17 @@
 //                   /api/v1/auth/refresh-token via withCredentials:true.
 //                   We never touch it here.
 //
-//   USER OBJECT   → sessionStorage (survives reload, cleared on tab close)
-//                   On reload: AuthContext detects sessionStorage user, calls
+//   USER OBJECT   → localStorage (survives reload AND tab switches)
+//                   On reload/new tab: AuthContext detects localStorage user, calls
 //                   fetchMe() which fires /auth/me → 401 → axios interceptor
 //                   → POST /auth/refresh-token (cookie auto-sent) → new access
 //                   token stored in memory → /auth/me retried → success.
 //
 // FIX: Previously stored both tokens in localStorage, exposing the 7-day
 // refresh token to any XSS payload. Now only non-sensitive data (user object)
-// is persisted, and only for the duration of the browser tab.
+// is persisted in localStorage, which is safe and allows cross-tab auth.
 
-import authConfig from '../config/auth.config';
+import authConfig from "../config/auth.config";
 
 const { user: USER_KEY } = authConfig.storage;
 
@@ -32,21 +32,25 @@ let _accessToken = null;
 export const storageUtils = {
   // ── Access Token (in-memory) ───────────────────────────────────────────────
   getAccessToken: () => _accessToken,
-  setAccessToken: (token) => { _accessToken = token; },
-  removeAccessToken: () => { _accessToken = null; },
+  setAccessToken: (token) => {
+    _accessToken = token;
+  },
+  removeAccessToken: () => {
+    _accessToken = null;
+  },
 
   // ── Refresh Token ──────────────────────────────────────────────────────────
   // The refresh token lives ONLY in the httpOnly cookie set by the server.
   // These are no-ops — they exist only to avoid breaking call sites that
   // previously set/got the refresh token from localStorage.
-  getRefreshToken: () => null,       // intentionally always null
-  setRefreshToken: (_token) => {},   // intentionally no-op
-  removeRefreshToken: () => {},      // intentionally no-op
+  getRefreshToken: () => null, // intentionally always null
+  setRefreshToken: (_token) => {}, // intentionally no-op
+  removeRefreshToken: () => {}, // intentionally no-op
 
-  // ── User (sessionStorage) ──────────────────────────────────────────────────
+  // ── User (localStorage) ────────────────────────────────────────────────────
   getUser: () => {
     try {
-      const raw = sessionStorage.getItem(USER_KEY);
+      const raw = localStorage.getItem(USER_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
@@ -54,12 +58,12 @@ export const storageUtils = {
   },
   setUser: (user) => {
     try {
-      sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
     } catch {
-      // sessionStorage may be unavailable in some private browsing modes
+      // localStorage may be unavailable in some private browsing modes
     }
   },
-  removeUser: () => sessionStorage.removeItem(USER_KEY),
+  removeUser: () => localStorage.removeItem(USER_KEY),
 
   // ── Bulk helpers ──────────────────────────────────────────────────────────
   setTokens: ({ accessToken }) => {
@@ -75,7 +79,7 @@ export const storageUtils = {
 
   clearAll: () => {
     _accessToken = null;
-    sessionStorage.removeItem(USER_KEY);
+    localStorage.removeItem(USER_KEY);
     // Note: the httpOnly refresh token cookie is cleared by the backend on logout.
   },
 };
