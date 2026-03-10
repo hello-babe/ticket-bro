@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import Container from "@/components/layout/Container";
 import { useLocation, LOCATIONS } from "@/context/LocationContext";
+import Breadcrumb from "@/components/shared/Breadcrumb";
 
 /* ═══════════════════════════════════════════════════════════════
    CATEGORY CONFIG - Using theme colors only
@@ -366,31 +367,6 @@ const StatCard = ({ icon: Icon, value, label }) => (
 );
 
 /* ═══════════════════════════════════════════════════════════════
-   CRUMB HELPERS
-═══════════════════════════════════════════════════════════════ */
-const CrumbLink = ({ to, children }) => (
-  <>
-    <Link
-      to={to}
-      className="text-muted-foreground hover:text-primary transition-colors duration-200 text-xs whitespace-nowrap"
-      style={{ fontFamily: "var(--font-sans)" }}
-    >
-      {children}
-    </Link>
-    <ChevronRight size={10} className="text-muted-foreground/40 shrink-0" />
-  </>
-);
-
-const CrumbCurrent = ({ children }) => (
-  <span
-    className="text-foreground font-semibold text-xs truncate max-w-[200px]"
-    style={{ fontFamily: "var(--font-sans)" }}
-  >
-    {children}
-  </span>
-);
-
-/* ═══════════════════════════════════════════════════════════════
    HERO SECTION - Single theme color throughout
 ═══════════════════════════════════════════════════════════════ */
 const HeroSection = () => {
@@ -595,37 +571,7 @@ const HeroSection = () => {
         <div className="py-4">
           {/* Breadcrumb */}
           <div className="mb-6" aria-label="Breadcrumb">
-            <nav
-              className="flex items-center gap-1.5 flex-wrap"
-              aria-label="Breadcrumb"
-            >
-              <CrumbLink to="/">Home</CrumbLink>
-              {level === "root" ? (
-                <CrumbCurrent>Browse</CrumbCurrent>
-              ) : (
-                <CrumbLink to="/browse">Browse</CrumbLink>
-              )}
-              {categorySlug &&
-                level !== "root" &&
-                (level === "category" ? (
-                  <CrumbCurrent>{config.label}</CrumbCurrent>
-                ) : (
-                  <CrumbLink to={`/browse/${categorySlug}`}>
-                    {config.label}
-                  </CrumbLink>
-                ))}
-              {subCategorySlug &&
-                (level === "subCategory" ? (
-                  <CrumbCurrent>{unslugify(subCategorySlug)}</CrumbCurrent>
-                ) : (
-                  <CrumbLink to={`/browse/${categorySlug}/${subCategorySlug}`}>
-                    {unslugify(subCategorySlug)}
-                  </CrumbLink>
-                ))}
-              {eventTypeSlug && (
-                <CrumbCurrent>{unslugify(eventTypeSlug)}</CrumbCurrent>
-              )}
-            </nav>
+            <Breadcrumb />
           </div>
 
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-10 lg:gap-16">
