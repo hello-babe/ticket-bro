@@ -16,21 +16,23 @@
 //   requireVerified       — if true, redirect unverified-email users to verify notice
 //   children              — wrapper usage only
 
-import React from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import React from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   selectIsAuthenticated,
   selectIsLoading,
   selectUser,
-} from '@/store/slices/authSlice';
-import authConfig from '@/config/auth.config';
+} from "@/store/slices/authSlice";
+import authConfig from "@/config/auth.config";
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-3">
-      <div className="w-6 h-6 rounded-full border-2 border-transparent border-t-[#a3e635]"
-           style={{ animation: 'spin 0.7s linear infinite' }} />
+      <div
+        className="w-6 h-6 rounded-full border-2 border-transparent border-t-[#a3e635]"
+        style={{ animation: "spin 0.7s linear infinite" }}
+      />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <p className="text-[0.8rem] text-muted-foreground">Loading…</p>
     </div>
@@ -43,10 +45,10 @@ const ProtectedRoute = ({
   allowedRoles,
   requireVerified = false,
 }) => {
-  const location        = useLocation();
+  const location = useLocation();
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const isLoading       = useSelector(selectIsLoading);
-  const user            = useSelector(selectUser);
+  const isLoading = useSelector(selectIsLoading);
+  const user = useSelector(selectUser);
 
   const requiredRoles = allowedRoles ?? roles ?? null;
 

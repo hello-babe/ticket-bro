@@ -8,7 +8,7 @@ import { Loader2, CheckCircle2, MailX, MailCheck } from "lucide-react";
 import AuthLayout from "@/components/layout/AuthLayout";
 import { StatusCard } from "./_authShared";
 import { ROUTES } from "@/app/AppRoutes";
-import authService from "@/services/authService";
+import authService from "@/api/auth.api";
 
 const STATUS = {
   NOTICE: "notice",

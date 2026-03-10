@@ -12,14 +12,11 @@ export default defineConfig({
     },
   },
   server: {
-    host: true,         // listen on all network interfaces
+    host: true,
     port: 5173,
-    strictPort: true,   // ensure port 5173 is used
-    allowedHosts: [
-      "localhost",
-      "127.0.0.1",
-      "attacks-arms-eng-stylish.trycloudflare.com", // ONLY this tunnel allowed
-    ],
+    strictPort: true,
+    allowedHosts: ["localhost", "127.0.0.1", process.env.CLOUDFLARE_TUNNEL_HOST || ".trycloudflare.com"],
+
     proxy: {
       "/api/v1": {
         target: "http://localhost:5000",

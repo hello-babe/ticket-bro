@@ -16,7 +16,7 @@ import {
   StatusCard,
 } from "./_authShared";
 import { ROUTES } from "@/app/AppRoutes";
-import authService from "@/services/authService";
+import authService from "@/api/auth.api";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email address"),
