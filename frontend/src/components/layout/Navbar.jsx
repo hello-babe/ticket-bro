@@ -215,11 +215,6 @@ const useNavOverflow = (containerRef, anchorRef, itemRefs) => {
   return visibleCount;
 };
 
-/**
- * Detects whether a flyout panel should open LEFT or RIGHT based on
- * available viewport space — calculated immediately on mount and on
- * every resize, so the chevron arrow is always correct before hover.
- */
 const useFlyoutSide = (panelWidth = 224) => {
   const ref = useRef(null);
   const [openLeft, setOpenLeft] = useState(false);
@@ -230,42 +225,100 @@ const useFlyoutSide = (panelWidth = 224) => {
     setOpenLeft(right + panelWidth > window.innerWidth);
   }, [panelWidth]);
 
-  // Run on mount (after layout so getBoundingClientRect is accurate)
   useLayoutEffect(() => {
     detect();
   }, [detect]);
 
-  // Re-run on viewport resize
   useEffect(() => {
     window.addEventListener("resize", detect, { passive: true });
     return () => window.removeEventListener("resize", detect);
   }, [detect]);
 
-  // Still expose detect so callers can re-check on mouseenter if they want
   return { ref, openLeft, detect };
+};
+
+// ─────────────────────────────────────────────────────────────────
+// ANIMATED ACCORDION — shared hook for smooth expand/collapse
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * useAccordion(open)
+ * Returns a ref to attach to the content wrapper and inline styles.
+ * Uses max-height + opacity for a smooth clip-in/out effect.
+ */
+const useAccordion = (open) => {
+  const ref = useRef(null);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    // Cancel any pending rAF
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+    if (open) {
+      // First: measure natural height
+      el.style.maxHeight = "none";
+      const fullH = el.scrollHeight;
+      el.style.maxHeight = "0px";
+      el.style.opacity = "0";
+      el.style.overflow = "hidden";
+
+      // Force reflow then animate to full height
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = requestAnimationFrame(() => {
+          el.style.transition = "max-height 280ms cubic-bezier(0.4, 0, 0.2, 1), opacity 220ms ease";
+          el.style.maxHeight = `${fullH}px`;
+          el.style.opacity = "1";
+
+          // After transition, remove max-height cap so dynamic content works
+          const onEnd = () => {
+            el.style.maxHeight = "none";
+            el.style.overflow = "visible";
+            el.removeEventListener("transitionend", onEnd);
+          };
+          el.addEventListener("transitionend", onEnd);
+        });
+      });
+    } else {
+      // Snap to current height then animate to 0
+      const fullH = el.scrollHeight;
+      el.style.maxHeight = `${fullH}px`;
+      el.style.overflow = "hidden";
+
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = requestAnimationFrame(() => {
+          el.style.transition = "max-height 240ms cubic-bezier(0.4, 0, 0.2, 1), opacity 180ms ease";
+          el.style.maxHeight = "0px";
+          el.style.opacity = "0";
+        });
+      });
+    }
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [open]);
+
+  return ref;
 };
 
 // ─────────────────────────────────────────────────────────────────
 // LEVEL 3 — Subcategory side panel
 // ─────────────────────────────────────────────────────────────────
-// Triggered by hovering a CategoryRow (level 2).
-// Uses group/cat on the parent <li> to isolate its own hover zone.
 
 const SubPanel = memo(({ subcategories, topSlug, catSlug, openLeft, isSubActive }) => {
   if (!subcategories?.length) return null;
 
-  // Position: fly left or right of the category row
   const panelPos   = openLeft ? "right-full top-0 mr-0" : "left-full top-0 ml-0";
-  // Invisible hover bridge fills the gap between the row and the panel
   const bridgePos  = openLeft ? "right-0 translate-x-full" : "left-0 -translate-x-full";
 
   return (
-    // Hidden by default; shown when parent <li class="group/cat"> is hovered
     <div className={`absolute z-[70] ${panelPos} hidden group-hover/cat:block`}>
-      {/* Hover bridge — covers the gap so mouse can travel without losing hover */}
       <div className={`absolute inset-y-0 w-3 ${bridgePos}`} />
 
-      <ul className="bg-popover border border-border rounded-none shadow-xl min-w-[200px] py-1">
+      <ul className="bg-popover rounded-none shadow-xl min-w-[200px] py-1">
         {subcategories.map((sub) => {
           const active = isSubActive(topSlug, catSlug, sub.slug);
           return (
@@ -293,8 +346,6 @@ SubPanel.displayName = "SubPanel";
 // ─────────────────────────────────────────────────────────────────
 // LEVEL 2 — Category row inside a top-level panel
 // ─────────────────────────────────────────────────────────────────
-// This <li> carries `group/cat` so SubPanel knows when to appear.
-// It detects viewport space to decide which side SubPanel opens on.
 
 const CategoryRow = memo(({ category, topSlug, isCatActive, isSubActive }) => {
   const { ref, openLeft, detect } = useFlyoutSide(208);
@@ -302,7 +353,6 @@ const CategoryRow = memo(({ category, topSlug, isCatActive, isSubActive }) => {
   const active  = isCatActive(topSlug, category.slug);
 
   return (
-    // group/cat — scoped group for level-3 SubPanel hover trigger
     <li ref={ref} className="relative group/cat">
       <Link
         to={`/browse/${topSlug}/${category.slug}`}
@@ -321,7 +371,6 @@ const CategoryRow = memo(({ category, topSlug, isCatActive, isSubActive }) => {
         )}
       </Link>
 
-      {/* Level 3 panel */}
       {hasSubs && (
         <SubPanel
           subcategories={category.subcategories}
@@ -337,10 +386,8 @@ const CategoryRow = memo(({ category, topSlug, isCatActive, isSubActive }) => {
 CategoryRow.displayName = "CategoryRow";
 
 // ─────────────────────────────────────────────────────────────────
-// LEVEL 2 panel container — drops below a top-level nav item
+// LEVEL 2 panel container
 // ─────────────────────────────────────────────────────────────────
-// Hidden by default; shown when parent <li class="group/top"> is hovered.
-// `align` controls whether the panel aligns to the left or right edge.
 
 const CategoryPanel = memo(({ categories, topSlug, align = "left", isCatActive, isSubActive }) => {
   if (!categories?.length) return null;
@@ -348,9 +395,8 @@ const CategoryPanel = memo(({ categories, topSlug, align = "left", isCatActive, 
   const edgeClass = align === "right" ? "right-0" : "left-0";
 
   return (
-    // Shown when the grandparent group/top <li> is hovered
     <div className={`absolute top-full ${edgeClass} z-50 pt-0 hidden group-hover/top:block`}>
-      <ul className="bg-popover border border-border rounded-none shadow-xl min-w-[220px] py-1">
+      <ul className="bg-popover rounded-none shadow-xl min-w-[220px] py-1">
         {categories.map((cat) => (
           <CategoryRow
             key={cat.id}
@@ -369,14 +415,12 @@ CategoryPanel.displayName = "CategoryPanel";
 // ─────────────────────────────────────────────────────────────────
 // LEVEL 1 — Inline desktop nav item
 // ─────────────────────────────────────────────────────────────────
-// This <li> carries `group/top` — the scope for showing CategoryPanel.
 
 const DesktopNavItem = memo(
   forwardRef(({ item, isTopActive, isCatActive, isSubActive, hidden }, ref) => {
     const active = isTopActive(item.slug);
 
     return (
-      // group/top — scoped group for level-2 CategoryPanel hover trigger
       <li
         ref={ref}
         style={hidden ? { visibility: "hidden", position: "absolute", pointerEvents: "none" } : undefined}
@@ -400,7 +444,6 @@ const DesktopNavItem = memo(
           />
         </Link>
 
-        {/* Level 2 panel */}
         <CategoryPanel
           categories={item.categories}
           topSlug={item.slug}
@@ -415,10 +458,8 @@ const DesktopNavItem = memo(
 DesktopNavItem.displayName = "DesktopNavItem";
 
 // ─────────────────────────────────────────────────────────────────
-// "More" overflow — a row inside the More dropdown
+// "More" overflow
 // ─────────────────────────────────────────────────────────────────
-// Uses group/moreitem to isolate the level-2 category panel.
-// The level-3 subcategory panels inside still use group/cat (isolated per CategoryRow).
 
 const MoreItem = memo(({ item, isTopActive, isCatActive, isSubActive }) => {
   const { ref, openLeft, detect } = useFlyoutSide(224);
@@ -429,7 +470,6 @@ const MoreItem = memo(({ item, isTopActive, isCatActive, isSubActive }) => {
   const bridgePos = openLeft ? "right-0 translate-x-full" : "left-0 -translate-x-full";
 
   return (
-    // group/moreitem — scoped group for the level-2 panel on More items
     <li ref={ref} className="relative group/moreitem">
       <Link
         to={`/browse/${item.slug}`}
@@ -448,12 +488,10 @@ const MoreItem = memo(({ item, isTopActive, isCatActive, isSubActive }) => {
         )}
       </Link>
 
-      {/* Level 2 panel for More items — uses CategoryRow inside, which provides group/cat for level 3 */}
       {hasCategories && (
         <div className={`absolute z-[70] ${panelPos} hidden group-hover/moreitem:block`}>
-          {/* Hover bridge */}
           <div className={`absolute inset-y-0 w-3 ${bridgePos}`} />
-          <ul className="relative bg-popover border border-border rounded-none shadow-xl min-w-[220px] py-1">
+          <ul className="relative bg-popover rounded-none shadow-xl min-w-[220px] py-1">
             {item.categories.map((cat) => (
               <CategoryRow
                 key={cat.id}
@@ -472,16 +510,13 @@ const MoreItem = memo(({ item, isTopActive, isCatActive, isSubActive }) => {
 MoreItem.displayName = "MoreItem";
 
 // ─────────────────────────────────────────────────────────────────
-// "More ▾" button — level-1 overflow dropdown
+// "More ▾" button
 // ─────────────────────────────────────────────────────────────────
-// Desktop: hover to show overflow panel.
-// onMoreClick: called on click — used to open the mobile drawer.
 
 const MoreDropdown = memo(({ items, isTopActive, isCatActive, isSubActive, onMoreClick }) => {
   if (!items.length) return null;
 
   return (
-    // group/top — hover opens the panel on desktop
     <li className="relative group/top h-full shrink-0 ml-1">
       <button
         type="button"
@@ -499,9 +534,8 @@ const MoreDropdown = memo(({ items, isTopActive, isCatActive, isSubActive, onMor
         <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-px bg-primary transition-all duration-300 origin-center w-0 group-hover/top:w-[60%]" />
       </button>
 
-      {/* Desktop hover panel */}
       <div className="absolute top-full right-0 z-50 pt-0 hidden group-hover/top:block">
-        <ul className="bg-popover border border-border rounded-none shadow-xl min-w-[220px] py-1">
+        <ul className="bg-popover rounded-none shadow-xl min-w-[220px] py-1">
           {items.map((item) => (
             <MoreItem
               key={item.id}
@@ -519,7 +553,7 @@ const MoreDropdown = memo(({ items, isTopActive, isCatActive, isSubActive, onMor
 MoreDropdown.displayName = "MoreDropdown";
 
 // ─────────────────────────────────────────────────────────────────
-// MOBILE — Drawer + Nested Accordion
+// MOBILE — Drawer + Independent Column Accordion
 // ─────────────────────────────────────────────────────────────────
 
 const MobileSubItem = memo(({ sub, topSlug, catSlug, isSubActive, onClose }) => {
@@ -541,13 +575,42 @@ const MobileSubItem = memo(({ sub, topSlug, catSlug, isSubActive, onClose }) => 
 });
 MobileSubItem.displayName = "MobileSubItem";
 
-const MobileCatItem = memo(({ category, topSlug, isCatActive, isSubActive, onClose }) => {
-  const [open, setOpen] = useState(false);
-  const hasSubs = !!category.subcategories?.length;
-  const active  = isCatActive(topSlug, category.slug);
+// ─────────────────────────────────────────────────────────────────
+// Animated subcategory list
+// ─────────────────────────────────────────────────────────────────
+
+const AnimatedSubList = memo(({ open, subcategories, topSlug, catSlug, isSubActive, onClose }) => {
+  const contentRef = useAccordion(open);
 
   return (
-    <li className="border-b border-border/25 last:border-0">
+    <div
+      ref={contentRef}
+      style={{ maxHeight: 0, opacity: 0, overflow: "hidden" }}
+    >
+      <ul className="bg-muted/20">
+        {subcategories.map((sub) => (
+          <MobileSubItem
+            key={sub.id}
+            sub={sub}
+            topSlug={topSlug}
+            catSlug={catSlug}
+            isSubActive={isSubActive}
+            onClose={onClose}
+          />
+        ))}
+      </ul>
+    </div>
+  );
+});
+AnimatedSubList.displayName = "AnimatedSubList";
+
+const MobileCatItemControlled = memo(({ category, topSlug, openCatId, onToggleCat, isCatActive, isSubActive, onClose }) => {
+  const hasSubs = !!category.subcategories?.length;
+  const active  = isCatActive(topSlug, category.slug);
+  const open    = openCatId === category.id;
+
+  return (
+    <li className="last:border-0">
       <div className="flex items-center pl-8 pr-2">
         <Link
           to={`/browse/${topSlug}/${category.slug}`}
@@ -562,89 +625,183 @@ const MobileCatItem = memo(({ category, topSlug, isCatActive, isSubActive, onClo
         {hasSubs && (
           <button
             type="button"
-            onClick={() => setOpen((p) => !p)}
-            className="flex items-center justify-center w-9 h-9 text-foreground  transition-colors rounded-none hover:bg-accent"
+            onClick={() => onToggleCat(category.id)}
+            className="flex items-center justify-center w-9 h-9 text-foreground  rounded-none hover:bg-accent"
             aria-label={open ? "Collapse" : "Expand"}
+            aria-expanded={open}
           >
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+            <ChevronDown
+              className="h-3.5 w-3.5"
+              style={{
+                transition: "transform 260ms cubic-bezier(0.4, 0, 0.2, 1)",
+                transform: open ? "rotate(180deg)" : "rotate(0deg)",
+              }}
+            />
           </button>
         )}
       </div>
 
-      {hasSubs && open && (
-        <ul className="border-t border-border/20 bg-muted/20">
-          {category.subcategories.map((sub) => (
-            <MobileSubItem
-              key={sub.id}
-              sub={sub}
-              topSlug={topSlug}
-              catSlug={category.slug}
-              isSubActive={isSubActive}
-              onClose={onClose}
-            />
-          ))}
-        </ul>
+      {hasSubs && (
+        <AnimatedSubList
+          open={open}
+          subcategories={category.subcategories}
+          topSlug={topSlug}
+          catSlug={category.slug}
+          isSubActive={isSubActive}
+          onClose={onClose}
+        />
       )}
     </li>
   );
 });
-MobileCatItem.displayName = "MobileCatItem";
+MobileCatItemControlled.displayName = "MobileCatItemControlled";
 
-const MobileTopItem = memo(({ item, isTopActive, isCatActive, isSubActive, onClose }) => {
-  const [open, setOpen]  = useState(false);
-  const hasCategories    = !!item.categories?.length;
-  const active           = isTopActive(item.slug);
+// ─────────────────────────────────────────────────────────────────
+// Animated category list
+// ─────────────────────────────────────────────────────────────────
+
+const AnimatedCatList = memo(({ open, categories, topSlug, openCatId, toggleCat, isCatActive, isSubActive, onClose }) => {
+  const contentRef = useAccordion(open);
 
   return (
-    <li className="border-b border-border last:border-0">
+    <div
+      ref={contentRef}
+      style={{ maxHeight: 0, opacity: 0, overflow: "hidden" }}
+    >
+      <ul className="bg-muted/15">
+        {categories.map((cat) => (
+          <MobileCatItemControlled
+            key={cat.id}
+            category={cat}
+            topSlug={topSlug}
+            openCatId={openCatId}
+            onToggleCat={toggleCat}
+            isCatActive={isCatActive}
+            isSubActive={isSubActive}
+            onClose={onClose}
+          />
+        ))}
+      </ul>
+    </div>
+  );
+});
+AnimatedCatList.displayName = "AnimatedCatList";
+
+// Each top-level item in a column — owns its own sub-accordion state.
+const MobileColumnItem = memo(({ item, openId, setOpenId, isTopActive, isCatActive, isSubActive, onClose }) => {
+  const [openCatId, setOpenCatId] = useState(null);
+  const toggleCat = useCallback((id) => setOpenCatId((p) => (p === id ? null : id)), []);
+  const active    = isTopActive(item.slug);
+  const open      = openId === item.id;
+  const hasCats   = !!item.categories?.length;
+
+  useEffect(() => { if (!open) setOpenCatId(null); }, [open]);
+
+  return (
+    <div>
+      {/* Top-level row */}
       <div className="flex items-center pr-2">
         <Link
           to={`/browse/${item.slug}`}
           onClick={onClose}
           className={[
             "flex-1 px-4 py-3.5 text-sm font-medium ",
-            active ? "text-primary" : "text-foreground ",
+            active ? "text-primary" : "text-foreground hover:text-primary",
           ].join(" ")}
         >
           {item.name}
         </Link>
-        {hasCategories && (
+        {hasCats && (
           <button
             type="button"
-            onClick={() => setOpen((p) => !p)}
-            className="flex items-center justify-center w-10 h-10 text-foreground  transition-colors rounded-none hover:bg-accent"
+            onClick={() => setOpenId(open ? null : item.id)}
+            className="flex items-center justify-center w-10 h-10 text-foreground  rounded-none hover:bg-accent shrink-0"
             aria-label={open ? `Collapse ${item.name}` : `Expand ${item.name}`}
+            aria-expanded={open}
           >
-            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+            <ChevronDown
+              className="h-4 w-4"
+              style={{
+                transition: "transform 260ms cubic-bezier(0.4, 0, 0.2, 1)",
+                transform: open ? "rotate(180deg)" : "rotate(0deg)",
+              }}
+            />
           </button>
         )}
       </div>
 
-      {hasCategories && open && (
-        <ul className="border-t border-border/30 bg-muted/15">
-          {item.categories.map((cat) => (
-            <MobileCatItem
-              key={cat.id}
-              category={cat}
-              topSlug={item.slug}
-              isCatActive={isCatActive}
-              isSubActive={isSubActive}
-              onClose={onClose}
-            />
-          ))}
-        </ul>
+      {/* Categories — animated expand/collapse */}
+      {hasCats && (
+        <AnimatedCatList
+          open={open}
+          categories={item.categories}
+          topSlug={item.slug}
+          openCatId={openCatId}
+          toggleCat={toggleCat}
+          isCatActive={isCatActive}
+          isSubActive={isSubActive}
+          onClose={onClose}
+        />
       )}
-    </li>
+    </div>
   );
 });
-MobileTopItem.displayName = "MobileTopItem";
+MobileColumnItem.displayName = "MobileColumnItem";
+
+// One of 3 vertical columns — fully independent, never affects siblings.
+const MobileColumn = memo(({ items, openId, setOpenId, isTopActive, isCatActive, isSubActive, onClose }) => (
+  <div className="flex-1 min-w-0" style={{ borderRight: "1px solid hsl(var(--border) / 0.3)" }}>
+    {items.map((item) => (
+      <MobileColumnItem
+        key={item.id}
+        item={item}
+        openId={openId}
+        setOpenId={setOpenId}
+        isTopActive={isTopActive}
+        isCatActive={isCatActive}
+        isSubActive={isSubActive}
+        onClose={onClose}
+      />
+    ))}
+  </div>
+));
+MobileColumn.displayName = "MobileColumn";
+
+const COLS = 3;
+
+// ─────────────────────────────────────────────────────────────────
+// MobileDrawer — with slide-down + fade open/close animation
+// ─────────────────────────────────────────────────────────────────
 
 const MobileDrawer = memo(({ open, onClose, pathname, isTopActive, isCatActive, isSubActive }) => {
+  const [openId, setOpenId] = useState(null);
+
+  // Two-phase state: `mounted` keeps DOM alive during exit animation,
+  // `animIn` drives the CSS transition class.
+  const [mounted, setMounted] = useState(false);
+  const [animIn, setAnimIn]   = useState(false);
+  const exitTimerRef          = useRef(null);
+
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (open) {
+      // Clear any pending unmount
+      if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
+      setMounted(true);
+      // Double rAF so the browser paints the initial (hidden) state first
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => setAnimIn(true))
+      );
+    } else {
+      setAnimIn(false);
+      // Keep mounted until exit transition finishes (300ms)
+      exitTimerRef.current = setTimeout(() => setMounted(false), 300);
+    }
+    return () => {
+      if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
+    };
   }, [open]);
 
+  // Route change → close
   const prevPath = useRef(pathname);
   useEffect(() => {
     if (prevPath.current !== pathname) {
@@ -653,59 +810,99 @@ const MobileDrawer = memo(({ open, onClose, pathname, isTopActive, isCatActive, 
     }
   }, [pathname, onClose]);
 
-  if (!open) return null;
+  // Reset accordion when drawer closes
+  useEffect(() => {
+    if (!open) setOpenId(null);
+  }, [open]);
+
+  // Keyboard + scroll close
+  useEffect(() => {
+    if (!open) return;
+    const onKey    = (e) => { if (e.key === "Escape") onClose(); };
+    const onScroll = () => onClose();
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [open, onClose]);
+
+  const handleSetOpenId = useCallback((id) => setOpenId((prev) => (prev === id ? null : id)), []);
+
+  if (!mounted) return null;
+
+  const ITEMS_PER_COL = Math.ceil(NAV_ITEMS.length / COLS); // auto: 10/3 = 4
+  const columns = Array.from({ length: COLS }, (_, ci) =>
+    NAV_ITEMS.slice(ci * ITEMS_PER_COL, (ci + 1) * ITEMS_PER_COL)
+  ).filter((col) => col.length > 0);
 
   return (
     <>
+      {/* Backdrop — fades in/out */}
       <div
-        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        className="xl:hidden fixed inset-0 z-30"
         onClick={onClose}
         aria-hidden="true"
+        style={{
+          backgroundColor: "hsl(var(--background) / 0.01)",
+          transition: "opacity 280ms ease",
+          opacity: animIn ? 1 : 0,
+        }}
       />
+
+      {/* Drawer panel — slides down from navbar + fades */}
       <div
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
         aria-label="Browse categories"
-        className="fixed inset-y-0 left-0 z-50 flex flex-col w-full max-w-[320px] bg-background border-r border-border shadow-2xl"
+        className="xl:hidden fixed left-0 right-0 z-40 bg-background border-b border-border shadow-lg overflow-y-auto"
+        style={{
+          top: "103px",
+          maxHeight: "calc(100vh - 103px)",
+          // Slide + fade: translate up 10px when hidden, 0 when visible
+          transform: animIn ? "translateY(0)" : "translateY(-10px)",
+          opacity: animIn ? 1 : 0,
+          transition: animIn
+            ? "transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 260ms ease"
+            : "transform 240ms cubic-bezier(0.4, 0, 1, 1), opacity 200ms ease",
+          // Clip the slide so it doesn't bleed above the navbar
+          clipPath: "inset(0 0 -100vh 0)",
+        }}
       >
-        <div className="flex items-center justify-between px-4 h-14 border-b border-border shrink-0 bg-background">
-          <span className="text-sm font-semibold text-primary tracking-wide">Browse Events</span>
+        {/* Header row */}
+        <div className="flex items-center justify-between pr-2 h-11">
+          <Link
+            to="/browse"
+            onClick={onClose}
+            className="flex-1 px-4 py-3.5 text-sm font-medium text-foreground hover:text-primary "
+          >
+            Browse Events
+          </Link>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close menu"
-            className="flex items-center justify-center w-8 h-8 rounded-none text-foreground  hover:bg-accent transition-colors"
+            aria-label="Close"
+            className="flex items-center justify-center w-9 h-9 text-muted-foreground hover:text-foreground hover:bg-accent "
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain">
-          <div className="border-b border-border">
-            <Link
-              to="/browse"
-              onClick={onClose}
-              className={[
-                "flex items-center px-4 py-3.5 text-sm font-medium ",
-                pathname === "/browse" ? "text-primary" : "text-foreground ",
-              ].join(" ")}
-            >
-              All Events
-            </Link>
-          </div>
-
-          <ul>
-            {NAV_ITEMS.map((item) => (
-              <MobileTopItem
-                key={item.id}
-                item={item}
-                isTopActive={isTopActive}
-                isCatActive={isCatActive}
-                isSubActive={isSubActive}
-                onClose={onClose}
-              />
-            ))}
-          </ul>
+        {/* 3 truly independent columns */}
+        <div className="flex items-start" style={{ borderTop: "1px solid hsl(var(--border) / 0.3)" }}>
+          {columns.map((colItems, ci) => (
+            <MobileColumn
+              key={ci}
+              items={colItems}
+              openId={openId}
+              setOpenId={handleSetOpenId}
+              isTopActive={isTopActive}
+              isCatActive={isCatActive}
+              isSubActive={isSubActive}
+              onClose={onClose}
+            />
+          ))}
         </div>
       </div>
     </>
@@ -740,11 +937,10 @@ const Navbar = () => {
           {/* ── Desktop ─────────────────────────────────────── */}
           <div
             ref={containerRef}
-            className="hidden sm:flex items-center h-11 w-full border-b border-border"
+            className="hidden xl:flex items-center h-11 w-full border-b border-border"
           >
             <ul className="flex items-center h-full w-full min-w-0">
 
-              {/* "All Events" anchor — always visible, measured for overflow calc */}
               <li ref={anchorRef} className="relative group/top h-full shrink-0">
                 <Link
                   to="/browse"
@@ -765,7 +961,6 @@ const Navbar = () => {
                 </Link>
               </li>
 
-              {/* All nav items — hidden ones stay in DOM for measurement */}
               {NAV_ITEMS.map((item, i) => (
                 <DesktopNavItem
                   key={item.id}
@@ -778,7 +973,6 @@ const Navbar = () => {
                 />
               ))}
 
-              {/* More dropdown */}
               {hasOverflow && (
                 <MoreDropdown
                   items={overflowItems}
@@ -793,7 +987,7 @@ const Navbar = () => {
           </div>
 
           {/* ── Mobile ──────────────────────────────────────── */}
-          <div className="flex sm:hidden items-center justify-between h-11 border-b border-border px-1">
+          <div className="flex xl:hidden items-center justify-between h-11 border-b border-border px-1">
             <Link
               to="/browse"
               className={[
@@ -808,10 +1002,16 @@ const Navbar = () => {
               type="button"
               onClick={openDrawer}
               aria-label="Browse categories"
-              className="flex items-center gap-1.5 h-full px-3 text-xs font-medium text-foreground  transition-colors border-l border-border ml-2"
+              className="flex items-center gap-1.5 h-full px-3 text-xs font-medium text-foreground  border-l border-border ml-2"
             >
               Browse
-              <ChevronDown className="h-3 w-3 opacity-60" />
+              <ChevronDown
+                className="h-3 w-3 opacity-60"
+                style={{
+                  transition: "transform 280ms cubic-bezier(0.4, 0, 0.2, 1)",
+                  transform: drawerOpen ? "rotate(180deg)" : "rotate(0deg)",
+                }}
+              />
             </button>
           </div>
 

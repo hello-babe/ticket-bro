@@ -139,9 +139,9 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
   }
-  Button{
-  cursor: pointer;
-}
+  Button {
+    @apply cursor-pointer;
+  }
 }
 
 @theme inline {
@@ -161,10 +161,10 @@
 
 * { scrollbar-width: thin; scrollbar-color: var(--primary) var(--background); }
 *::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-track { background: var(--background); border-radius: var(--radius-lg); }
-*::-webkit-scrollbar-thumb { background-color: var(--primary); border-radius: var(--radius-lg); border: 2px solid var(--background); }
+*::-webkit-scrollbar-track { background: var(--background); border-radius: var(--radius-full); }
+*::-webkit-scrollbar-thumb { background-color: var(--primary); border-radius: var(--radius-full); border: 2px solid var(--background); }
 *::-webkit-scrollbar-thumb:hover { background-color: var(--primary-foreground); }
-*::-webkit-scrollbar-corner { background: var(--background); }
+*::-webkit-scrollbar-corner { background: var(--background); border-radius: var(--radius-full)}
 .dark * { scrollbar-color: var(--primary) var(--background); }
 .dark *::-webkit-scrollbar-thumb:hover { background-color: var(--primary-foreground); }
 

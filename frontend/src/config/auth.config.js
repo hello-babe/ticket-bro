@@ -16,8 +16,8 @@
 // ╚══════════════════════════════════════════════════════════════════╝
 
 const authConfig = {
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1',
-  appName:    import.meta.env.VITE_APP_NAME     || 'Ticket Bro',
+  apiBaseUrl: '/api/v1',  // Use relative path — goes through Vite proxy
+  appName: import.meta.env.VITE_APP_NAME || 'Ticket Bro',
 
   routes: {
     // ── Shared ────────────────────────────────────────────────────────────────

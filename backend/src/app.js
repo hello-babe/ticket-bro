@@ -47,16 +47,28 @@ app.use(
 app.use(
   cors({
     origin: (origin, callback) => {
-      const allowedOrigins = [env.FRONTEND_URL, env.BACKEND_URL];
-      if (!origin || allowedOrigins.includes(origin)) {
+      const allowedOrigins = [
+        env.FRONTEND_URL,
+        env.BACKEND_URL,
+        'https://attacks-arms-eng-stylish.trycloudflare.com', // only allow this tunnel
+      ];
+
+      if (!origin) {
+        // Allow server-to-server requests (curl, Postman)
+        callback(null, true);
+      }
+      else if (origin && /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:5173$/.test(origin)) {
+        callback(null, true);
+      } 
+      else if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        callback(new Error(`Not allowed by CORS: ${origin}`));
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+    allowedHeaders: ["Content-Type","Authorization","X-Requested-With","x-tunnel-secret"],
   }),
 );
 
