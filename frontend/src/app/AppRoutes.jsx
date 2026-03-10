@@ -275,7 +275,12 @@ const AppRoutes = () => (
         <Route path="/faq"     element={<FAQPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms"   element={<TermsPage />} />
-         <Route path="/events/create" element={<CreateEventPage />} />
+        {/* Redirects for nav links that point to unbuilt pages */}
+        <Route path="/offers"   element={<Navigate to="/browse" replace />} />
+        <Route path="/trending" element={<Navigate to="/browse" replace />} />
+        <Route path="/favorites" element={<Navigate to="/profile" replace />} />
+        <Route path="/settings"  element={<Navigate to="/profile" replace />} />
+        <Route path="/calendar"  element={<Navigate to="/bookings" replace />} />
       </Route>
 
       {/* ══════════════════════════════════════════════════════════
