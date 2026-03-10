@@ -80,7 +80,7 @@ const UserMenu = () => {
         >
           <Link to="?auth=login">
             <User className="h-3.5 w-3.5" />
-            Sign In
+            Account
           </Link>
         </Button>
         <Button
@@ -88,7 +88,7 @@ const UserMenu = () => {
           className="gap-1.5 hidden sm:flex h-9 px-3 text-sm text-black"
           asChild
         >
-          <Link to="?auth=register">Sign Up</Link>
+          <Link to="?auth=register">Create Event</Link>
         </Button>
 
         {/* Mobile: icon only */}
