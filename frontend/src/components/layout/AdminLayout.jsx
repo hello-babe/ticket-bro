@@ -109,7 +109,7 @@ const AdminLayout = () => {
       {/* Mobile Sidebar Toggle */}
       <button
         onClick={toggleSidebar}
-        className="lg:hidden fixed bottom-4 right-4 z-50 p-3 bg-primary text-primary-foreground rounded-full shadow-lg"
+        className="xl:hidden fixed bottom-4 right-4 z-[45] p-3 bg-primary text-primary-foreground rounded-full shadow-lg"
       >
         {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
       </button>
@@ -117,7 +117,7 @@ const AdminLayout = () => {
       {/* Sidebar Overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-30 xl:hidden"
           onClick={toggleSidebar}
         />
       )}
@@ -126,11 +126,11 @@ const AdminLayout = () => {
         {/* Sidebar */}
         <aside
           className={`
-            fixed lg:static inset-y-0 left-0 z-40
+            fixed xl:static inset-y-0 left-0 z-40
             bg-card border-r border-border
             transition-all duration-300 ease-in-out
             ${isCollapsed ? 'w-20' : 'w-72'}
-            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'}
           `}
         >
           {/* Admin Info */}
@@ -173,7 +173,7 @@ const AdminLayout = () => {
             variant="ghost"
             size="icon"
             onClick={toggleCollapse}
-            className="hidden lg:flex absolute -right-3 top-20 bg-background border border-border rounded-full h-6 w-6"
+            className="hidden xl:flex absolute -right-3 top-20 bg-background border border-border rounded-full h-6 w-6"
           >
             <ChevronDown className={`h-3 w-3 transition-transform ${isCollapsed ? 'rotate-90' : '-rotate-90'}`} />
           </Button>
@@ -296,7 +296,7 @@ const AdminLayout = () => {
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
                   <h1 className="text-lg font-semibold">Admin Dashboard</h1>
-                  <Badge variant="outline" className="hidden sm:flex">
+                  <Badge variant="outline" className="hidden xl:flex">
                     Production
                   </Badge>
                 </div>

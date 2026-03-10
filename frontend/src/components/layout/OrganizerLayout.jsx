@@ -106,7 +106,7 @@ const OrganizerLayout = () => {
       {/* Mobile Sidebar Toggle */}
       <button
         onClick={toggleSidebar}
-        className="lg:hidden fixed bottom-4 right-4 z-50 p-3 bg-primary text-primary-foreground rounded-full shadow-lg"
+        className="xl:hidden fixed bottom-4 right-4 z-[45] p-3 bg-primary text-primary-foreground rounded-full shadow-lg"
       >
         {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
       </button>
@@ -114,7 +114,7 @@ const OrganizerLayout = () => {
       {/* Sidebar Overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-30 xl:hidden"
           onClick={toggleSidebar}
         />
       )}
@@ -123,10 +123,10 @@ const OrganizerLayout = () => {
         {/* Sidebar */}
         <aside
           className={`
-            fixed lg:static inset-y-0 left-0 z-40
+            fixed xl:static inset-y-0 left-0 z-40
             w-72 bg-card border-r border-border
             transform transition-transform duration-300 ease-in-out
-            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'}
           `}
         >
           {/* Organizer Info */}
@@ -281,7 +281,7 @@ const OrganizerLayout = () => {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="gap-2">
-                        <span className="hidden sm:inline">Help</span>
+                        <span className="hidden xl:inline">Help</span>
                         <ChevronDown className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
