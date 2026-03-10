@@ -205,10 +205,11 @@ const AvatarUpload = ({ user, open, onOpenChange }) => {
                   variant="destructive"
                   onClick={handleRemove}
                   disabled={isUploading}
-                  size="icon"
                   title="Remove avatar"
+                  className="flex items-center gap-2"
                 >
                   <X className="h-4 w-4" />
+                  Remove avatar
                 </Button>
               )}
             </div>

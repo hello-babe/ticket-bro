@@ -24,7 +24,6 @@ const CategoryPage = () => {
   return (
     <div>
       <HeroSection />
-      <CategoryNavSection />
       <FiltersSection />
       <EventGridSection />
       <FeaturedSection />
