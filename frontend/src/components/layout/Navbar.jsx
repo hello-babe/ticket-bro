@@ -162,9 +162,11 @@ const useRouteActive = () => {
   const { pathname } = useLocation();
   const seg = pathname.split("/").filter(Boolean);
 
-  const isTopActive  = useCallback((s)       => seg[0] === "browse" && seg[1] === s, [seg]);
-  const isCatActive  = useCallback((t, c)    => seg[0] === "browse" && seg[1] === t && seg[2] === c, [seg]);
-  const isSubActive  = useCallback((t, c, s) => seg[0] === "browse" && seg[1] === t && seg[2] === c && seg[3] === s, [seg]);
+  // Routes: /:cat, /:cat/:sub, /:cat/:sub/:type, /:cat/:sub/:type/:slug
+  // seg: [0]=categorySlug, [1]=subCategorySlug, [2]=eventTypeSlug, [3]=eventSlug
+  const isTopActive  = useCallback((s)       => seg[0] === s, [seg]);
+  const isCatActive  = useCallback((t, c)    => seg[0] === t && seg[1] === c, [seg]);
+  const isSubActive  = useCallback((t, c, s) => seg[0] === t && seg[1] === c && seg[2] === s, [seg]);
 
   return { pathname, isTopActive, isCatActive, isSubActive };
 };
@@ -324,7 +326,7 @@ const SubPanel = memo(({ subcategories, topSlug, catSlug, openLeft, isSubActive 
           return (
             <li key={sub.id}>
               <Link
-                to={`/browse/${topSlug}/${catSlug}/${sub.slug}`}
+                to={`/${topSlug}/${catSlug}/${sub.slug}`}
                 className={[
                   "flex items-center px-4 py-2 text-xs whitespace-nowrap ",
                   active
@@ -355,7 +357,7 @@ const CategoryRow = memo(({ category, topSlug, isCatActive, isSubActive }) => {
   return (
     <li ref={ref} className="relative group/cat">
       <Link
-        to={`/browse/${topSlug}/${category.slug}`}
+        to={`/${topSlug}/${category.slug}`}
         className={[
           "flex items-center justify-between gap-4 px-4 py-2 text-xs whitespace-nowrap ",
           active
@@ -427,7 +429,7 @@ const DesktopNavItem = memo(
         className="relative group/top h-full shrink-0"
       >
         <Link
-          to={`/browse/${item.slug}`}
+          to={`/${item.slug}`}
           className={[
             "relative flex items-center h-full px-3.5 text-xs font-medium tracking-wide",
             "whitespace-nowrap  select-none",
@@ -472,7 +474,7 @@ const MoreItem = memo(({ item, isTopActive, isCatActive, isSubActive }) => {
   return (
     <li ref={ref} className="relative group/moreitem">
       <Link
-        to={`/browse/${item.slug}`}
+        to={`/${item.slug}`}
         className={[
           "flex items-center justify-between gap-4 px-4 py-2 text-xs whitespace-nowrap",
           active
@@ -561,7 +563,7 @@ const MobileSubItem = memo(({ sub, topSlug, catSlug, isSubActive, onClose }) => 
   return (
     <li>
       <Link
-        to={`/browse/${topSlug}/${catSlug}/${sub.slug}`}
+        to={`/${topSlug}/${catSlug}/${sub.slug}`}
         onClick={onClose}
         className={[
           "block pl-14 pr-4 py-2.5 text-xs ",
@@ -613,7 +615,7 @@ const MobileCatItemControlled = memo(({ category, topSlug, openCatId, onToggleCa
     <li className="last:border-0">
       <div className="flex items-center pl-8 pr-2">
         <Link
-          to={`/browse/${topSlug}/${category.slug}`}
+          to={`/${topSlug}/${category.slug}`}
           onClick={onClose}
           className={[
             "flex-1 py-2.5 text-xs ",
@@ -702,7 +704,7 @@ const MobileColumnItem = memo(({ item, openId, setOpenId, isTopActive, isCatActi
       {/* Top-level row */}
       <div className="flex items-center pr-2">
         <Link
-          to={`/browse/${item.slug}`}
+          to={`/${item.slug}`}
           onClick={onClose}
           className={[
             "flex-1 px-4 py-3.5 text-sm font-medium ",

@@ -1,12 +1,17 @@
 // frontend/src/components/layout/MainLayout.jsx
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import MobileBottomNav from './MobileBottomNav';
+import FloatingCartWidget from '../shared/FloatingCartWidget';
+import FloatingTimerWidget from '../shared/FloatingClosingSoonWidget';
 
 const MainLayout = () => {
+  const { pathname } = useLocation();
+  const isHome = pathname === '/';
+
   return (
     <div>
       <Header />
@@ -17,6 +22,10 @@ const MainLayout = () => {
       </main>
       <Footer />
       <MobileBottomNav />
+
+      {/* ── Floating widgets ── */}
+      <FloatingCartWidget />
+      {isHome && <FloatingTimerWidget />}
     </div>
   );
 };
