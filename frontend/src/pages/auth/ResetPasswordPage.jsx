@@ -24,7 +24,7 @@ import {
   PasswordChecklist,
 } from "./_authShared";
 import { ROUTES } from "@/app/AppRoutes";
-import authService from "@/services/authService";
+import authService from "@/api/auth.api";
 
 const schema = z
   .object({

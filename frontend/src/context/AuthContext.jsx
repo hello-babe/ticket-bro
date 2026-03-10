@@ -6,9 +6,14 @@
 //
 // Both systems use the same Redux store (authSlice) and this hook.
 
-import React, { createContext, useContext, useEffect, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useCallback,
+} from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   registerUser,
   loginUser,
@@ -23,19 +28,19 @@ import {
   selectAuthError,
   selectRequires2FA,
   select2FAEmail,
-} from '../store/slices/authSlice';
-import { storageUtils } from '../utils/storageUtils';
-import authConfig from '../config/auth.config';
-import authService from '../services/authService';
+} from "../store/slices/authSlice";
+import { storageUtils } from "../utils/storageUtils";
+import authConfig from "../config/auth.config";
+import authService from "../api/auth.api";
 
 // ── Context (read-only — for components that only need state, no router) ──────
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const dispatch        = useDispatch();
-  const user            = useSelector(selectUser);
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const isLoading       = useSelector(selectIsLoading);
+  const isLoading = useSelector(selectIsLoading);
 
   // Silent re-auth on page reload / new tab.
   // Access token is in-memory so it's gone after reload.
@@ -58,21 +63,22 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuthContext = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuthContext must be used inside <AuthProvider>');
+  if (!ctx)
+    throw new Error("useAuthContext must be used inside <AuthProvider>");
   return ctx;
 };
 
 // ── Main hook — used by both modal forms and page components ──────────────────
 // Requires a Router context (calls useNavigate internally).
 export const useAuth = () => {
-  const dispatch       = useDispatch();
-  const navigate       = useNavigate();
-  const location       = useLocation();
-  const user           = useSelector(selectUser);
-  const isAuthenticated= useSelector(selectIsAuthenticated);
-  const isLoading      = useSelector(selectIsLoading);
-  const error          = useSelector(selectAuthError);
-  const requires2FA    = useSelector(selectRequires2FA);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const user = useSelector(selectUser);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const isLoading = useSelector(selectIsLoading);
+  const error = useSelector(selectAuthError);
+  const requires2FA = useSelector(selectRequires2FA);
   const twoFactorEmail = useSelector(select2FAEmail);
 
   // ── register ────────────────────────────────────────────────────────────────
@@ -109,7 +115,9 @@ export const useAuth = () => {
     const result = await dispatch(loginUser(data));
     if (!result.error) {
       if (result.payload?.requiresTwoFactor) {
-        navigate(authConfig.routes.pages.verifyOtp, { state: { from: { pathname: redirectTo } } });
+        navigate(authConfig.routes.pages.verifyOtp, {
+          state: { from: { pathname: redirectTo } },
+        });
       } else {
         navigate(redirectTo || authConfig.routes.home, { replace: true });
       }
@@ -144,30 +152,36 @@ export const useAuth = () => {
   };
 
   // ── hasRole ─────────────────────────────────────────────────────────────────
-  const hasRole = useCallback((...roles) => {
-    if (!user) return false;
-    return roles.includes(user.role);
-  }, [user]);
+  const hasRole = useCallback(
+    (...roles) => {
+      if (!user) return false;
+      return roles.includes(user.role);
+    },
+    [user],
+  );
 
   // ── hasPermission ───────────────────────────────────────────────────────────
   // Lightweight client-side permission check (server always re-verifies).
-  const ORGANIZER_ROLES = ['organizer', 'admin', 'super_admin'];
-  const ADMIN_ROLES     = ['admin', 'super_admin'];
+  const ORGANIZER_ROLES = ["organizer", "admin", "super_admin"];
+  const ADMIN_ROLES = ["admin", "super_admin"];
 
-  const hasPermission = useCallback((permission) => {
-    if (!user) return false;
-    switch (permission) {
-      case 'create:events':
-      case 'view:organizer_dashboard':
-        return ORGANIZER_ROLES.includes(user.role);
-      case 'manage:users':
-      case 'view:admin_dashboard':
-      case 'manage:roles':
-        return ADMIN_ROLES.includes(user.role);
-      default:
-        return user.role === 'super_admin';
-    }
-  }, [user]);
+  const hasPermission = useCallback(
+    (permission) => {
+      if (!user) return false;
+      switch (permission) {
+        case "create:events":
+        case "view:organizer_dashboard":
+          return ORGANIZER_ROLES.includes(user.role);
+        case "manage:users":
+        case "view:admin_dashboard":
+        case "manage:roles":
+          return ADMIN_ROLES.includes(user.role);
+        default:
+          return user.role === "super_admin";
+      }
+    },
+    [user],
+  );
 
   return {
     // State
@@ -188,9 +202,9 @@ export const useAuth = () => {
     resend2FA,
     hasRole,
     hasPermission,
-    refreshProfile:  () => dispatch(fetchMe()),
-    clearError:      () => dispatch(clearError()),
-    clearTwoFactor:  () => dispatch(clearTwoFactor()),
+    refreshProfile: () => dispatch(fetchMe()),
+    clearError: () => dispatch(clearError()),
+    clearTwoFactor: () => dispatch(clearTwoFactor()),
   };
 };
 

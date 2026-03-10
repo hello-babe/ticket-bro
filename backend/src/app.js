@@ -47,29 +47,50 @@ app.use(
 app.use(
   cors({
     origin: (origin, callback) => {
+      if (!origin) {
+        return callback(null, true); // allow curl/postman
+      }
+
       const allowedOrigins = [
         env.FRONTEND_URL,
         env.BACKEND_URL,
-        'https://attacks-arms-eng-stylish.trycloudflare.com', // only allow this tunnel
       ];
 
-      if (!origin) {
-        // Allow server-to-server requests (curl, Postman)
-        callback(null, true);
+      // Allow localhost
+      if (
+        origin.startsWith("http://localhost") ||
+        origin.startsWith("http://127.0.0.1")
+      ) {
+        return callback(null, true);
       }
-      else if (origin && /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:5173$/.test(origin)) {
-        callback(null, true);
-      } 
-      else if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`Not allowed by CORS: ${origin}`));
+
+      // Allow LAN devices
+      if (/^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:5173$/.test(origin)) {
+        return callback(null, true);
       }
+
+      // Allow ANY Cloudflare tunnel
+      if (/\.trycloudflare\.com$/.test(new URL(origin).hostname)) {
+        return callback(null, true);
+      }
+
+      // Allow configured domains
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`Not allowed by CORS: ${origin}`));
     },
+
     credentials: true,
-    methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
-    allowedHeaders: ["Content-Type","Authorization","X-Requested-With","x-tunnel-secret"],
-  }),
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "x-tunnel-secret",
+    ],
+  })
 );
 
 // ── Global Rate Limiting ──────────────────────────────────────────────────────

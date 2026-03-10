@@ -1,27 +1,27 @@
 // frontend/src/pages/auth/OAuthSuccessPage.jsx
-import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { XCircle } from 'lucide-react';
-import { setAuthFromOAuth } from '@/store/slices/authSlice';
-import { storageUtils } from '@/utils/storageUtils';
-import authService from '@/services/authService';
-import { ROUTES } from '@/app/AppRoutes';
+import React, { useEffect, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { XCircle } from "lucide-react";
+import { setAuthFromOAuth } from "@/store/slices/authSlice";
+import { storageUtils } from "@/utils/storageUtils";
+import authService from "@/api/auth.api";
+import { ROUTES } from "@/app/AppRoutes";
 
-import Container from '@/components/layout/Container';
-import { PageLoader } from '@/components/shared/Loader';
+import Container from "@/components/layout/Container";
+import { PageLoader } from "@/components/shared/Loader";
 
 const OAuthSuccessPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const token = searchParams.get('token');
+    const token = searchParams.get("token");
 
     if (!token) {
-      setError('OAuth login failed — no token received. Please try again.');
+      setError("OAuth login failed — no token received. Please try again.");
       return;
     }
 
@@ -32,7 +32,11 @@ const OAuthSuccessPage = () => {
         // FIX: Remove the access token from the URL immediately.
         // Leaving it in the URL exposes it in browser history, server logs,
         // and the Referer header of any subsequent navigation.
-        window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname,
+        );
 
         // Store in-memory access token
         storageUtils.setAccessToken(token);
@@ -58,7 +62,7 @@ const OAuthSuccessPage = () => {
           storageUtils.clearAll();
           setError(
             err.response?.data?.message ||
-              'Failed to complete sign in. Please try again.',
+              "Failed to complete sign in. Please try again.",
           );
         }
       }

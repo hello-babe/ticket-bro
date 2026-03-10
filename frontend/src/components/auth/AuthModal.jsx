@@ -13,25 +13,29 @@
 //                   NOTE: actual email-token verification happens on /auth/verify-email
 //                   (System B page). The modal only shows the "check your inbox" notice.
 
-import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { X, Loader2, CheckCircle2, XCircle, MailCheck } from 'lucide-react';
-import { useSelector } from 'react-redux';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { X, Loader2, CheckCircle2, XCircle, MailCheck } from "lucide-react";
+import { useSelector } from "react-redux";
+import { motion, AnimatePresence } from "framer-motion";
 
-import LoginForm         from './LoginForm';
-import RegisterForm      from './RegisterForm';
-import ForgotPasswordForm from './ForgotPasswordForm';
-import ResetPasswordForm  from './ResetPasswordForm';
-import OTPVerification   from './OTPVerification';
+import LoginForm from "./LoginForm";
+import RegisterForm from "./RegisterForm";
+import ForgotPasswordForm from "./ForgotPasswordForm";
+import ResetPasswordForm from "./ResetPasswordForm";
+import OTPVerification from "./OTPVerification";
 
-import authService from '../../services/authService';
-import { selectRequires2FA, selectUser, selectAuthStatus } from '../../store/slices/authSlice';
-import authConfig from '../../config/auth.config';
-import { useTheme } from '../../context/ThemeContext';
+import authService from "../../api/auth.api";
+import {
+  selectRequires2FA,
+  selectUser,
+  selectAuthStatus,
+} from "../../store/slices/authSlice";
+import authConfig from "../../config/auth.config";
+import { useTheme } from "../../context/ThemeContext";
 
-import darkLogo  from '@/assets/images/ticket-bro-logo-dark-mode.png';
-import lightLogo from '@/assets/images/ticket-bro-logo-light-mode.png';
+import darkLogo from "@/assets/images/ticket-bro-logo-dark-mode.png";
+import lightLogo from "@/assets/images/ticket-bro-logo-light-mode.png";
 
 // ── Verify-notice panel ───────────────────────────────────────────────────────
 // Shown after register OR when ?auth=verify is opened without a token.
@@ -51,13 +55,13 @@ const VerifyNotice = ({ onResend, loading, sent }) => (
       Click the link to activate your account.
     </p>
     <p className="text-[0.78rem] text-muted-foreground">
-      Didn't get it?{' '}
+      Didn't get it?{" "}
       <button
         onClick={onResend}
         disabled={loading || sent}
         className="font-semibold text-foreground bg-transparent border-none p-0 cursor-pointer hover:text-[#a3e635] transition-colors duration-150 disabled:opacity-50"
       >
-        {sent ? 'Sent!' : loading ? 'Sending…' : 'Resend email'}
+        {sent ? "Sent!" : loading ? "Sending…" : "Resend email"}
       </button>
     </p>
   </div>
@@ -66,20 +70,25 @@ const VerifyNotice = ({ onResend, loading, sent }) => (
 // ── AuthModal ────────────────────────────────────────────────────────────────
 const AuthModal = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate     = useNavigate();
-  const authType     = searchParams.get('auth');
-  const requires2FA  = useSelector(selectRequires2FA);
-  const user         = useSelector(selectUser);
-  const authStatus   = useSelector(selectAuthStatus);
-  const { isDark }   = useTheme();
+  const navigate = useNavigate();
+  const authType = searchParams.get("auth");
+  const requires2FA = useSelector(selectRequires2FA);
+  const user = useSelector(selectUser);
+  const authStatus = useSelector(selectAuthStatus);
+  const { isDark } = useTheme();
 
   const [resendLoading, setResendLoading] = useState(false);
-  const [resendSent,    setResendSent]    = useState(false);
+  const [resendSent, setResendSent] = useState(false);
 
   // ── Auto-close if session restored and user is now authenticated ─────────────
   // Prevents modal from lingering after silent refresh completes
   useEffect(() => {
-    if (authStatus === 'authenticated' && authType && authType !== 'verify-notice' && authType !== 'verify') {
+    if (
+      authStatus === "authenticated" &&
+      authType &&
+      authType !== "verify-notice" &&
+      authType !== "verify"
+    ) {
       closeModal();
     }
   }, [authStatus, authType]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -87,29 +96,29 @@ const AuthModal = () => {
   // ── Close modal ─────────────────────────────────────────────────────────────
   const closeModal = () => {
     const next = new URLSearchParams(searchParams);
-    next.delete('auth');
-    next.delete('token');
+    next.delete("auth");
+    next.delete("token");
     setSearchParams(next);
   };
 
   // ── Body scroll lock ────────────────────────────────────────────────────────
   useEffect(() => {
     if (authType) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     };
   }, [authType]);
 
   // ── OTP guard: if someone navigates to ?auth=otp without a 2FA flow, redirect ──
   useEffect(() => {
-    if (authType === 'otp' && !requires2FA) {
+    if (authType === "otp" && !requires2FA) {
       navigate(authConfig.routes.login, { replace: true });
     }
   }, [authType, requires2FA, navigate]);
@@ -131,27 +140,28 @@ const AuthModal = () => {
 
   // ── Don't show auth modal while session restore is in progress ───────────────
   // Prevents login modal flicker on page refresh for logged-in users.
-  if (authStatus === 'loading') return null;
+  if (authStatus === "loading") return null;
 
   // ── Don't show login/register if already authenticated ───────────────────────
-  const guestOnlyTypes = ['login', 'register', 'forgot', 'reset', 'otp'];
-  if (authStatus === 'authenticated' && guestOnlyTypes.includes(authType)) return null;
+  const guestOnlyTypes = ["login", "register", "forgot", "reset", "otp"];
+  if (authStatus === "authenticated" && guestOnlyTypes.includes(authType))
+    return null;
 
   // ── Render correct form/panel per ?auth= value ───────────────────────────────
   const renderContent = () => {
     switch (authType) {
-      case 'login':
+      case "login":
         return <LoginForm />;
-      case 'register':
+      case "register":
         return <RegisterForm />;
-      case 'forgot':
+      case "forgot":
         return <ForgotPasswordForm />;
-      case 'reset':
+      case "reset":
         return <ResetPasswordForm />;
-      case 'otp':
+      case "otp":
         return <OTPVerification />;
-      case 'verify-notice':
-      case 'verify':
+      case "verify-notice":
+      case "verify":
         // Both aliases show the "check your inbox" notice.
         // Actual token-based email verification lives at /auth/verify-email (System B).
         return (
@@ -174,31 +184,33 @@ const AuthModal = () => {
       <motion.div
         key="auth-overlay"
         className={[
-          'fixed inset-0 z-50',
-          'flex items-end sm:items-start justify-center',
-          'sm:pt-16 md:pt-24',
-          'bg-black/50 backdrop-blur-sm',
-          'px-0 sm:px-4',
-        ].join(' ')}
+          "fixed inset-0 z-50",
+          "flex items-end sm:items-start justify-center",
+          "sm:pt-16 md:pt-24",
+          "bg-black/50 backdrop-blur-sm",
+          "px-0 sm:px-4",
+        ].join(" ")}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        onClick={e => { if (e.target === e.currentTarget) closeModal(); }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) closeModal();
+        }}
       >
         <motion.div
           key="auth-modal"
-          initial={{ y: '-100vh', opacity: 0 }}
+          initial={{ y: "-100vh", opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: '-100vh', opacity: 0 }}
+          exit={{ y: "-100vh", opacity: 0 }}
           transition={{ duration: 0.35 }}
           className={[
-            'relative bg-card shadow-xl',
-            'w-full sm:max-w-[460px]',
-            'rounded-t-2xl sm:rounded-xl',
-            'max-h-[92dvh] sm:max-h-[90vh]',
-            'overflow-y-auto overflow-x-hidden overscroll-contain',
-          ].join(' ')}
+            "relative bg-card shadow-xl",
+            "w-full sm:max-w-[460px]",
+            "rounded-t-2xl sm:rounded-xl",
+            "max-h-[92dvh] sm:max-h-[90vh]",
+            "overflow-y-auto overflow-x-hidden overscroll-contain",
+          ].join(" ")}
         >
           {/* Drag handle — mobile only */}
           <div className="flex justify-center pt-3 pb-1 sm:hidden" aria-hidden>
