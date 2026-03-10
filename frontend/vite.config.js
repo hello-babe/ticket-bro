@@ -12,11 +12,13 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,         // listen on all network interfaces
     port: 5173,
+    strictPort: true,   // ensure port 5173 is used
     allowedHosts: [
       "localhost",
       "127.0.0.1",
-      "ribbony-ununited-desmond.ngrok-free.dev",
+      "attacks-arms-eng-stylish.trycloudflare.com", // ONLY this tunnel allowed
     ],
     proxy: {
       "/api/v1": {

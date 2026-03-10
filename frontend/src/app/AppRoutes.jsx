@@ -46,6 +46,8 @@ import VerifyEmailPage    from '@/pages/auth/VerifyEmailPage';
 import OAuthSuccessPage   from '@/pages/auth/OAuthSuccessPage';
 import SystemSecurityPage from '@/pages/admin/SystemSecurityPage';
 import SystemHealthPage from '@/pages/admin/SystemHealthPage';
+import TrandingsPage from '@/pages/browse/Highlighted/TrandingsPage';
+import OffersPage from '@/pages/browse/Highlighted/OffersPage';
 
 // ── Lazy loaded ───────────────────────────────────────────────────────────────
 const HomePage                 = lazy(() => import('@/pages/home/HomePage'));
@@ -276,8 +278,8 @@ const AppRoutes = () => (
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms"   element={<TermsPage />} />
         {/* Redirects for nav links that point to unbuilt pages */}
-        <Route path="/offers"   element={<Navigate to="/browse" replace />} />
-        <Route path="/trending" element={<Navigate to="/browse" replace />} />
+        <Route path="/offers"   element={<OffersPage/>} />
+        <Route path="/trending" element={<TrandingsPage/>} />
         <Route path="/favorites" element={<Navigate to="/profile" replace />} />
         <Route path="/settings"  element={<Navigate to="/profile" replace />} />
         <Route path="/calendar"  element={<Navigate to="/bookings" replace />} />
