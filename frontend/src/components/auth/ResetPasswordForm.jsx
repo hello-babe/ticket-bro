@@ -6,7 +6,7 @@ import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { Lock, Eye, EyeOff, ArrowRight, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import authService from "@/services/authService";
+import authService from "@/api/auth.api";
 import { resetSchema } from "@/utils/validators";
 import authConfig from "@/config/auth.config";
 

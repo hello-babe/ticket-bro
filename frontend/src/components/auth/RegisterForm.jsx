@@ -1,59 +1,75 @@
 // frontend/src/components/auth/RegisterForm.jsx
 // Used by: AuthModal (?auth=register) — System A
 
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, User, Phone, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Link, useSearchParams } from "react-router-dom";
+import {
+  Mail,
+  Lock,
+  User,
+  Phone,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Check,
+} from "lucide-react";
 
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from "react-redux";
 import {
   registerUser,
   selectIsLoading,
   selectAuthError,
   clearError,
-} from '@/store/slices/authSlice';
-import { registerSchema, getPasswordStrength } from '@/utils/validators';
-import authConfig from '@/config/auth.config';
-import SocialLogin from './SocialLogin';
-import { InputField, Button, Divider } from '@/components/shared';
+} from "@/store/slices/authSlice";
+import { registerSchema, getPasswordStrength } from "@/utils/validators";
+import authConfig from "@/config/auth.config";
+import SocialLogin from "./SocialLogin";
+import { InputField, Button, Divider } from "@/components/shared";
 
 // Password requirement dot
 const Req = ({ met, label }) => (
   <div className="flex items-center gap-1.5">
     <div
       className="w-3.5 h-3.5 rounded-full flex-shrink-0 flex items-center justify-center transition-colors duration-200"
-      style={{ background: met ? 'oklch(0.5 0.15 142)' : 'var(--border)' }}
+      style={{ background: met ? "oklch(0.5 0.15 142)" : "var(--border)" }}
     >
       {met && <Check size={8} color="white" strokeWidth={3} />}
     </div>
-    <span className={`${met ? 'text-foreground' : 'text-muted-foreground'} text-[0.65rem] transition-colors duration-200`}>
+    <span
+      className={`${met ? "text-foreground" : "text-muted-foreground"} text-[0.65rem] transition-colors duration-200`}
+    >
       {label}
     </span>
   </div>
 );
 
 const RegisterForm = () => {
-  const dispatch    = useDispatch();
+  const dispatch = useDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
-  const isLoading   = useSelector(selectIsLoading);
-  const error       = useSelector(selectAuthError);
+  const isLoading = useSelector(selectIsLoading);
+  const error = useSelector(selectAuthError);
 
   const [showPw, setShowPw] = useState(false);
   const [showCp, setShowCp] = useState(false);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm({
     resolver: zodResolver(registerSchema),
   });
 
-  const pw       = watch('password', '');
+  const pw = watch("password", "");
   const strength = getPasswordStrength(pw);
   const reqs = [
-    { label: '8+ characters', met: pw.length >= 8 },
-    { label: 'Uppercase',     met: /[A-Z]/.test(pw) },
-    { label: 'Number',        met: /[0-9]/.test(pw) },
-    { label: 'Special char',  met: /[@$!%*?&]/.test(pw) },
+    { label: "8+ characters", met: pw.length >= 8 },
+    { label: "Uppercase", met: /[A-Z]/.test(pw) },
+    { label: "Number", met: /[0-9]/.test(pw) },
+    { label: "Special char", met: /[@$!%*?&]/.test(pw) },
   ];
 
   const onSubmit = async (data) => {
@@ -62,7 +78,7 @@ const RegisterForm = () => {
     if (!result.error) {
       // Switch modal to verify-notice panel
       const next = new URLSearchParams(searchParams);
-      next.set('auth', 'verify-notice');
+      next.set("auth", "verify-notice");
       setSearchParams(next);
     }
   };
@@ -72,7 +88,7 @@ const RegisterForm = () => {
       <div className="mb-5">
         <h2
           className="font-heading font-extrabold tracking-tight text-foreground leading-tight mb-1"
-          style={{ fontSize: 'clamp(1.3rem, 2vw, 1.5rem)' }}
+          style={{ fontSize: "clamp(1.3rem, 2vw, 1.5rem)" }}
         >
           Create account
         </h2>
@@ -85,7 +101,9 @@ const RegisterForm = () => {
       <Divider label="or register with email" />
 
       {error && (
-        <p className="text-[0.75rem] text-destructive mb-3 text-center">{error}</p>
+        <p className="text-[0.75rem] text-destructive mb-3 text-center">
+          {error}
+        </p>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
@@ -97,7 +115,7 @@ const RegisterForm = () => {
             error={errors.firstName?.message}
             left={<User size={14} />}
             placeholder="John"
-            {...register('firstName')}
+            {...register("firstName")}
           />
           <InputField
             id="lastName"
@@ -105,7 +123,7 @@ const RegisterForm = () => {
             error={errors.lastName?.message}
             left={<User size={14} />}
             placeholder="Doe"
-            {...register('lastName')}
+            {...register("lastName")}
           />
         </div>
 
@@ -116,15 +134,22 @@ const RegisterForm = () => {
           left={<Mail size={14} />}
           placeholder="you@example.com"
           autoComplete="email"
-          {...register('email')}
+          {...register("email")}
         />
 
         <InputField
           id="phone"
-          label={<span>Phone <span className="text-[0.65rem] font-normal text-muted-foreground">(optional)</span></span>}
+          label={
+            <span>
+              Phone{" "}
+              <span className="text-[0.65rem] font-normal text-muted-foreground">
+                (optional)
+              </span>
+            </span>
+          }
           left={<Phone size={14} />}
           placeholder="+1 234 567 8900"
-          {...register('phone')}
+          {...register("phone")}
         />
 
         {/* Password + strength meter */}
@@ -135,32 +160,45 @@ const RegisterForm = () => {
             error={errors.password?.message}
             left={<Lock size={14} />}
             right={
-              <button type="button" tabIndex={-1} onClick={() => setShowPw(v => !v)}
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPw((v) => !v)}
                 className="hover:text-foreground transition-colors duration-150"
-                aria-label={showPw ? 'Hide password' : 'Show password'}>
+                aria-label={showPw ? "Hide password" : "Show password"}
+              >
                 {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             }
-            type={showPw ? 'text' : 'password'}
+            type={showPw ? "text" : "password"}
             placeholder="••••••••"
             autoComplete="new-password"
-            {...register('password')}
+            {...register("password")}
           />
 
           {pw && (
             <div className="mt-2 flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
                 <div className="flex-1 h-1 rounded-full bg-border overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-300"
-                    style={{ width: `${strength.pct}%`, background: strength.color }} />
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${strength.pct}%`,
+                      background: strength.color,
+                    }}
+                  />
                 </div>
-                <span className="text-[0.65rem] font-semibold font-heading min-w-[48px] text-right transition-colors duration-200"
-                  style={{ color: strength.color }}>
+                <span
+                  className="text-[0.65rem] font-semibold font-heading min-w-[48px] text-right transition-colors duration-200"
+                  style={{ color: strength.color }}
+                >
                   {strength.label}
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
-                {reqs.map(r => <Req key={r.label} {...r} />)}
+                {reqs.map((r) => (
+                  <Req key={r.label} {...r} />
+                ))}
               </div>
             </div>
           )}
@@ -172,16 +210,22 @@ const RegisterForm = () => {
           error={errors.confirmPassword?.message}
           left={<Lock size={14} />}
           right={
-            <button type="button" tabIndex={-1} onClick={() => setShowCp(v => !v)}
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => setShowCp((v) => !v)}
               className="hover:text-foreground transition-colors duration-150"
-              aria-label={showCp ? 'Hide confirm password' : 'Show confirm password'}>
+              aria-label={
+                showCp ? "Hide confirm password" : "Show confirm password"
+              }
+            >
               {showCp ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
           }
-          type={showCp ? 'text' : 'password'}
+          type={showCp ? "text" : "password"}
           placeholder="••••••••"
           autoComplete="new-password"
-          {...register('confirmPassword')}
+          {...register("confirmPassword")}
         />
 
         <Button type="submit" isLoading={isLoading}>
@@ -191,7 +235,7 @@ const RegisterForm = () => {
       </form>
 
       <p className="text-[0.75rem] text-muted-foreground text-center mt-5">
-        Already have an account?{' '}
+        Already have an account?{" "}
         <Link
           to={authConfig.routes.login}
           className="font-semibold font-heading text-foreground no-underline hover:text-[#a3e635] transition-colors duration-150"

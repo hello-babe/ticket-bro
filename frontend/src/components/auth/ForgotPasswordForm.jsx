@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { Mail, ArrowRight, ArrowLeft, MailCheck } from "lucide-react";
 import toast from "react-hot-toast";
 
-import authService from "@/services/authService";
+import authService from "@/api/auth.api";
 import { forgotSchema } from "@/utils/validators";
 import authConfig from "@/config/auth.config";
 

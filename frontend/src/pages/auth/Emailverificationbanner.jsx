@@ -8,7 +8,7 @@ import React, { useState } from "react";
 import { MailWarning, X, CheckCircle2, Loader2 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAuthenticated } from "@/store/slices/authSlice";
-import authService from "@/services/authService";
+import authService from "@/api/auth.api";
 
 const EmailVerificationBanner = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);

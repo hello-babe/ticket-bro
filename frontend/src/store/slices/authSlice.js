@@ -1,7 +1,7 @@
 // frontend/src/store/slices/authSlice.js
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import authService from "../../services/authService";
+import authService from "../../api/auth.api";
 import { storageUtils } from "../../utils/storageUtils";
 
 // ── Async Thunks ──────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ const initialState = {
   // "loading"       — session restore in progress; block ALL auth-gated UI
   // "authenticated" — fetchMe succeeded; user is logged in
   // "guest"         — no session or fetchMe failed; show login/register
-  authStatus: persistedUser ? 'loading' : 'guest',
+  authStatus: persistedUser ? "loading" : "guest",
   isLoading: !!persistedUser, // show loading spinner while silent refresh is in flight
   error: null,
   requiresTwoFactor: false,
@@ -146,7 +146,7 @@ const authSlice = createSlice({
       const { user, accessToken } = action.payload;
       state.user = user;
       state.isAuthenticated = true;
-      state.authStatus = 'authenticated';
+      state.authStatus = "authenticated";
       state.error = null;
       storageUtils.setTokens({ accessToken });
       storageUtils.setUser(user);
@@ -181,11 +181,11 @@ const authSlice = createSlice({
         if (action.payload.requiresTwoFactor) {
           state.requiresTwoFactor = true;
           state.twoFactorEmail = action.payload.email;
-          state.authStatus = 'guest';
+          state.authStatus = "guest";
         } else {
           state.user = action.payload.user;
           state.isAuthenticated = true;
-          state.authStatus = 'authenticated';
+          state.authStatus = "authenticated";
           state.requiresTwoFactor = false;
           state.twoFactorEmail = null;
         }
@@ -205,7 +205,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.user = action.payload.user;
         state.isAuthenticated = true;
-        state.authStatus = 'authenticated';
+        state.authStatus = "authenticated";
         state.requiresTwoFactor = false;
         state.twoFactorEmail = null;
       })
@@ -218,7 +218,7 @@ const authSlice = createSlice({
     builder.addCase(logoutUser.fulfilled, (state) => {
       state.user = null;
       state.isAuthenticated = false;
-      state.authStatus = 'guest';
+      state.authStatus = "guest";
       state.requiresTwoFactor = false;
       state.twoFactorEmail = null;
       state.error = null;
@@ -229,19 +229,19 @@ const authSlice = createSlice({
     builder
       .addCase(fetchMe.pending, (state) => {
         state.isLoading = true;
-        state.authStatus = 'loading';
+        state.authStatus = "loading";
       })
       .addCase(fetchMe.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
-        state.authStatus = 'authenticated';
+        state.authStatus = "authenticated";
       })
       .addCase(fetchMe.rejected, (state) => {
         state.isLoading = false;
         state.user = null;
         state.isAuthenticated = false;
-        state.authStatus = 'guest';
+        state.authStatus = "guest";
       });
   },
 });

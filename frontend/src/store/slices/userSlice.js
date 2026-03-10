@@ -1,7 +1,7 @@
 // frontend/src/store/slices/userSlice.js
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import userService from "@/services/userService";
+import userService from "@/api/user.api";
 import { storageUtils } from "@/utils/storageUtils";
 
 // ── Helper — safely extract data from { status, message, data } ──────────────

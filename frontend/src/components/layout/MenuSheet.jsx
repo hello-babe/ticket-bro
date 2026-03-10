@@ -432,12 +432,6 @@ export const SheetContent = ({
       {/* Scrollable sections */}
       <div className="overflow-y-auto max-h-[55vh] py-1">
 
-        {/* Discover — all users */}
-        <SheetSectionLabel>Discover</SheetSectionLabel>
-        {DISCOVER_ITEMS.map(({ icon, label, to }) => (
-          <SheetItem key={to} icon={icon} label={label} onClick={() => go(to)} />
-        ))}
-
         {/* Auth-only: Admin → Organizer → Account */}
         {userSections.map((section) => (
           <React.Fragment key={section.id}>

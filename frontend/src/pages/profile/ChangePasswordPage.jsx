@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { logoutUser } from "@/store/slices/authSlice";
 import { ROUTES } from "@/app/AppRoutes";
-import authService from "@/services/authService";
+import authService from "@/api/auth.api";
 
 // ── Validation ────────────────────────────────────────────────────────────────
 const schema = z
