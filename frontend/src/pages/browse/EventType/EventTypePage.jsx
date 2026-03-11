@@ -2,11 +2,24 @@
 // Route: /:categorySlug/:subCategorySlug/:eventTypeSlug
 import React from "react";
 import {
-  HeroSection, CategoryNavSection, FiltersSection, EventGridSection,
-  FeaturedSection, TrendingSection, NewArrivalsSection, UpcomingSection,
-  TopRatedSection, EditorsPicksSection, NearbySection, MapSection,
-  CalendarSection, RecommendedSection, ReviewsSection, StatsSection, NewsletterSection,
-} from "@/components/browse/sections";
+  HeroSection,
+  CategoryNavSection,
+  FiltersSection,
+  EventGridSection,
+  FeaturedSection,
+  TrendingSection,
+  NewArrivalsSection,
+  UpcomingSection,
+  TopRatedSection,
+  EditorsPicksSection,
+  NearbySection,
+  MapSection,
+  CalendarSection,
+  RecommendedSection,
+  ReviewsSection,
+  StatsSection,
+  NewsletterSection,
+} from "@/components/browse/common";
 
 const EventTypePage = () => (
   <div>

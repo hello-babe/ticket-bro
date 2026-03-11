@@ -41,7 +41,7 @@ import {
   EventSponsorsSection,
   EventRelatedSection,
   EventStickyBar,
-} from "@/components/event/sections";
+} from "@/components/browse/event";
 
 // ── Mock data (replace with API hook in production) ───────────────────────
 import MOCK_EVENT from "./eventDetailMock";
