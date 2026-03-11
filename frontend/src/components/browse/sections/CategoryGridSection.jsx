@@ -1,5 +1,5 @@
 import React from "react";
-import { CategoryCard } from "../cards";
+import { CategoryCard } from "../../shared/cards";
 
 const CategoryGridSection = ({ categories }) => (
   <section className="py-12">
