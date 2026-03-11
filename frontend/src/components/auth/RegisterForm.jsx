@@ -26,7 +26,7 @@ import {
 import { registerSchema, getPasswordStrength } from "@/utils/validators";
 import authConfig from "@/config/auth.config";
 import SocialLogin from "./SocialLogin";
-import { InputField, Button, Divider } from "@/components/shared";
+import { InputField, Button, Divider } from "@/components/shared/common";
 
 // Password requirement dot
 const Req = ({ met, label }) => (
