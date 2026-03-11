@@ -72,7 +72,7 @@ const InfoRow = ({ icon: Icon, label, value }) => {
 // ── Card ──────────────────────────────────────────────────────────────────────
 const Card = ({ children, className = "" }) => (
   <div
-    className={`bg-card border border-border rounded-2xl p-4 sm:p-5 ${className}`}
+    className={`bg-card rounded-2xl p-4 sm:p-5 ${className}`}
   >
     {children}
   </div>
@@ -130,7 +130,7 @@ const NavItem = ({ to, icon: Icon, label, desc, color, onClick, danger }) => {
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 const Skeleton = () => (
   <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-3 sm:space-y-4 animate-pulse">
-    <div className="bg-card border border-border rounded-2xl p-4 sm:p-5">
+    <div className="bg-card rounded-2xl p-4 sm:p-5">
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
         <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-muted shrink-0" />
         <div className="flex-1 w-full space-y-3">
@@ -143,7 +143,7 @@ const Skeleton = () => (
     {[1, 2, 3].map((i) => (
       <div
         key={i}
-        className="bg-card border border-border rounded-2xl p-4 sm:p-5"
+        className="bg-card rounded-2xl p-4 sm:p-5"
       >
         <div className="h-4 bg-muted rounded w-32 mb-4" />
         <div className="space-y-3">
@@ -257,7 +257,7 @@ const ProfilePage = () => {
               </Link>
               <Link
                 to={ROUTES.PROFILE.CHANGE_PASSWORD}
-                className="inline-flex items-center gap-1.5 h-8 px-3 sm:px-3.5 rounded-lg border border-border bg-card text-foreground text-xs font-semibold no-underline hover:border-primary/40 hover:bg-primary/5 transition-all"
+                className="inline-flex items-center gap-1.5 h-8 px-3 sm:px-3.5 rounded-lg border border-border bg-card text-foreground text-xs font-semibold no-underline hover:border-accent hover:bg-accent transition-all"
               >
                 <Key size={12} />
                 <span>Password</span>
