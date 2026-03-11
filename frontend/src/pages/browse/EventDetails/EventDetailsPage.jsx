@@ -31,7 +31,7 @@ import {
   Heart, Flag, ZoomIn,
 } from "lucide-react";
 import Container from "@/components/layout/Container";
-import { useLocation } from "@/context/LocationContext";
+import { useLocation as useLocationCtx } from "@/context/LocationContext";
 import Breadcrumb from "@/components/shared/Breadcrumb";
 
 /* ═══════════════════════════════════════════════════════════════

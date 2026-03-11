@@ -1,28 +1,33 @@
-import { CalendarSection, CategoryNavSection, EditorsPicksSection, EventGridSection, FeaturedSection, FiltersSection, HeroSection, MapSection, NearbySection, NewArrivalsSection, NewsletterSection, RecommendedSection, ReviewsSection, StatsSection, TopRatedSection, TrendingSection, UpcomingSection } from '@/components/browse/sections'
-import React from 'react'
+// frontend/src/pages/browse/SubCategory/SubCategoryPage.jsx
+// Route: /:categorySlug/:subCategorySlug
+import React from "react";
+import {
+  HeroSection, CategoryNavSection, FiltersSection, EventGridSection,
+  FeaturedSection, TrendingSection, NewArrivalsSection, UpcomingSection,
+  TopRatedSection, EditorsPicksSection, NearbySection, MapSection,
+  CalendarSection, RecommendedSection, ReviewsSection, StatsSection, NewsletterSection,
+} from "@/components/browse/sections";
 
-const SubCategoryPage = () => {
-  return (
-    <div>
-      <HeroSection />
-      <CategoryNavSection />
-      <FiltersSection />
-      <EventGridSection />
-      <FeaturedSection />
-      <TrendingSection />
-      <NewArrivalsSection />
-      <UpcomingSection />
-      <TopRatedSection />
-      <EditorsPicksSection />
-      <NearbySection />
-      <MapSection/>
-      <CalendarSection/>
-      <RecommendedSection/>
-      <ReviewsSection/>
-      <StatsSection/>
-      <NewsletterSection/>
-    </div>
-  );
-}
+const SubCategoryPage = () => (
+  <div>
+    <HeroSection />
+    <CategoryNavSection />
+    <FiltersSection />
+    <EventGridSection />
+    <FeaturedSection />
+    <TrendingSection />
+    <NewArrivalsSection />
+    <UpcomingSection />
+    <TopRatedSection />
+    <EditorsPicksSection />
+    <NearbySection />
+    <MapSection />
+    <CalendarSection />
+    <RecommendedSection />
+    <ReviewsSection />
+    <StatsSection />
+    <NewsletterSection />
+  </div>
+);
 
-export default SubCategoryPage
+export default SubCategoryPage;

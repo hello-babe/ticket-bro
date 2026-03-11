@@ -212,7 +212,7 @@ const TicketSection = ({ event, ticketTypes = [], onTicketSelect }) => {
                       {typeTickets.map((ticket) => (
                         <div
                           key={ticket.id}
-                          className="flex flex-col md:flex-row md:items-center justify-between p-4 border rounded-lg hover:border-primary transition-colors"
+                          className="flex flex-col md:flex-row md:items-center justify-between p-4 border rounded-lg hover:border-primary "
                         >
                           <div className="flex-1 mb-4 md:mb-0">
                             <div className="flex items-start gap-3">
