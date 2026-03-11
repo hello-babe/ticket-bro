@@ -3,7 +3,7 @@ import React from "react";
 import Container from "@/components/layout/Container";
 import { Eye } from "lucide-react";
 import BrowseEventCard from "@/components/browse/cards/BrowseEventCard";
-import { useBrowse } from "@/hooks/useBrowse";
+import { useBrowse } from "@/hooks";
 import { useState } from "react";
 
 const RecentlyViewedSection = () => {

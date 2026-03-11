@@ -1,9 +1,2 @@
-import React from 'react'
-
-const StatsSection = () => {
-  return (
-    <div>StatsSection</div>
-  )
-}
-
-export default StatsSection
+// Re-export browse StatsSection for use on the home page
+export { default } from "@/components/browse/sections/StatsSection";

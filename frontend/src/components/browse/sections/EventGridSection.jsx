@@ -1,7 +1,7 @@
 // frontend/src/components/browse/sections/EventGridSection.jsx
 import React, { useState, useMemo } from "react";
 import { LayoutGrid, List, Inbox } from "lucide-react";
-import { useBrowse, unslugify, spotsPercent } from "@/hooks/useBrowse";
+import { useBrowse, unslugify, spotsPercent } from "@/hooks";
 import BrowseEventCard from "@/components/browse/cards/BrowseEventCard";
 import SectionShell from "./SectionShell";
 import Container from "@/components/layout/Container";

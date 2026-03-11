@@ -3,7 +3,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { Link, useLocation as useRRLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Container from "@/components/layout/Container";
-import { useBrowse } from "@/hooks/useBrowse";
+import { useBrowse } from "@/hooks";
 import { CATEGORY_MAP } from "@/data/browseData";
 
 const CategoryNavSection = () => {

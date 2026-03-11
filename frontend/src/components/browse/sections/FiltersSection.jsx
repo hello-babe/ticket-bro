@@ -183,7 +183,7 @@ const FiltersSection = ({ onFiltersChange, counts = FILTER_FACETS }) => {
           <SortDropdown value={filters.sort} onChange={(v) => updateFilter("sort", v)} />
         </div>
         {activeCount > 0 && (
-          <div className="border-t border-border pt-2">
+          <div className="border-t border-border pt-1">
             <ActiveChips filters={filters} onRemove={(k) => updateFilter(k, null)} />
           </div>
         )}

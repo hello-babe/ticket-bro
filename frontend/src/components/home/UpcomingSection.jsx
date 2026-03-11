@@ -1,9 +1,2 @@
-import React from 'react'
-
-const UpcomingSection = () => {
-  return (
-    <div>UpcomingSection</div>
-  )
-}
-
-export default UpcomingSection
+// Re-export browse UpcomingSection for use on the home page
+export { default } from "@/components/browse/sections/UpcomingSection";

@@ -1,9 +1,2 @@
-import React from 'react'
-
-const NewsletterSection = () => {
-  return (
-    <div>NewsletterSection</div>
-  )
-}
-
-export default NewsletterSection
+// Re-export browse NewsletterSection for use on the home page
+export { default } from "@/components/browse/sections/NewsletterSection";

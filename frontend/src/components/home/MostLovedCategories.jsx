@@ -1,144 +1,106 @@
+// frontend/src/components/home/MostLovedCategories.jsx
 import React from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { serviceTypes } from "../../data/serviceTypes"; // Adjust path
+import { useNavigate } from "react-router-dom";
 import Container from "@/components/layout/Container";
+import { useBrowse } from "@/hooks";
+import { CATEGORY_MAP } from "@/data/browseData";
+
+// Visual accent colours per category slug
+const ACCENT = {
+  music:         { bg: "rgba(59,130,246,0.08)",  text: "#93c5fd" },
+  sports:        { bg: "rgba(34,197,94,0.08)",   text: "#86efac" },
+  "arts-culture":{ bg: "rgba(168,85,247,0.08)",  text: "#d8b4fe" },
+  "food-drink":  { bg: "rgba(249,115,22,0.08)",  text: "#fdba74" },
+  business:      { bg: "rgba(99,102,241,0.08)",  text: "#a5b4fc" },
+  education:     { bg: "rgba(20,184,166,0.08)",  text: "#5eead4" },
+  health:        { bg: "rgba(236,72,153,0.08)",  text: "#f9a8d4" },
+  technology:    { bg: "rgba(163,230,53,0.08)",  text: "#a3e635" },
+  "kids-family": { bg: "rgba(251,191,36,0.08)",  text: "#fde68a" },
+  community:     { bg: "rgba(239,68,68,0.08)",   text: "#fca5a5" },
+};
+
+const CategoryCard = ({ slug, cat, onClick }) => {
+  const accent = ACCENT[slug] || { bg: "rgba(163,230,53,0.08)", text: "#a3e635" };
+  const Icon = cat.icon;
+  return (
+    <button
+      onClick={() => onClick(slug)}
+      className="group relative flex items-center h-28 sm:h-32 rounded-sm border border-border overflow-hidden bg-card hover:border-foreground/30 hover:shadow-lg transition-all duration-300 cursor-pointer text-left w-full"
+    >
+      {/* Left text */}
+      <div className="flex-1 pl-4 sm:pl-5 z-10 min-w-0">
+        <div
+          className="inline-flex items-center justify-center w-7 h-7 rounded-sm mb-2 border"
+          style={{ background: accent.bg, borderColor: accent.text + "40", color: accent.text }}
+        >
+          {Icon && <Icon size={13} strokeWidth={2} />}
+        </div>
+        <h3 className="text-sm font-bold text-foreground leading-tight truncate"
+          style={{ fontFamily: "var(--font-heading)" }}>
+          {cat.label}
+        </h3>
+        <p className="text-[10px] text-muted-foreground mt-0.5"
+          style={{ fontFamily: "var(--font-sans)" }}>
+          {cat.totalEvents?.toLocaleString()}+ events
+        </p>
+      </div>
+
+      {/* Right image bleed */}
+      <div
+        className="absolute right-0 top-0 h-full w-1/2 transition-transform group-hover:scale-105 duration-500"
+        style={{ clipPath: "polygon(25% 0%, 100% 0%, 100% 100%, 0% 100%)", background: accent.bg }}
+      >
+        <div className="absolute inset-0" style={{
+          background: `linear-gradient(to left, ${accent.bg} 0%, transparent 100%)`
+        }} />
+        <span className="absolute inset-0 flex items-center justify-center opacity-20 text-5xl pointer-events-none select-none">
+          {Icon && <Icon size={48} strokeWidth={1} color={accent.text} />}
+        </span>
+      </div>
+    </button>
+  );
+};
 
 const MostLovedCategories = () => {
-  // We'll take a few key categories from your serviceTypes
-  // or define the specific ones shown in your image
-  const displayCategories = [
-    {
-      id: "music",
-      label: "Music",
-      color: "bg-blue-100/50",
-      textColor: "text-blue-900",
-      img: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80",
-    },
-    {
-      id: "business",
-      label: "Business",
-      color: "bg-indigo-100/50",
-      textColor: "text-indigo-900",
-      img: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=400&q=80",
-    },
-    {
-      id: "parties",
-      label: "Parties",
-      color: "bg-orange-100/50",
-      textColor: "text-orange-900",
-      img: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&q=80",
-    },
-    {
-      id: "food-drinks",
-      label: "Food & Drinks",
-      color: "bg-red-100/50",
-      textColor: "text-red-900",
-      img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&q=80",
-    },
-    {
-      id: "dating",
-      label: "Dating",
-      color: "bg-pink-100/50",
-      textColor: "text-pink-900",
-      img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80",
-    },
-    {
-      id: "festivals",
-      label: "Festivals",
-      color: "bg-purple-100/50",
-      textColor: "text-purple-900",
-      img: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&q=80",
-    },
-    {
-      id: "health-wellness",
-      label: "Health & Wellness",
-      color: "bg-green-100/50",
-      textColor: "text-green-900",
-      img: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80",
-    },
-    {
-      id: "kids",
-      label: "Kids",
-      color: "bg-cyan-100/50",
-      textColor: "text-cyan-900",
-      img: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=400&q=80",
-    },
-    {
-      id: "photography",
-      label: "Photography",
-      sub: "Events",
-      color: "bg-slate-100/50",
-      textColor: "text-slate-900",
-      img: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&q=80",
-    },
-  ];
+  const navigate = useNavigate();
+  const { locationLabel, buildCategoryUrl } = useBrowse();
+
+  const categories = Object.entries(CATEGORY_MAP);
 
   return (
-    <section className="py-12 px-6 bg-background">
+    <section className="bg-background py-10">
       <Container>
-        <h2 className="text-2xl font-bold font-heading mb-8 text-foreground">
-          Dhaka's Most-Loved
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {displayCategories.map((cat) => (
-            <div
-              key={cat.id}
-              className={`group relative flex items-center h-32 rounded-2xl border border-border overflow-hidden bg-card hover:shadow-lg transition-all duration-300 cursor-pointer`}
-            >
-              {/* Text Side */}
-              <div className="flex-1 pl-6 z-10">
-                <h3
-                  className={`text-lg font-bold font-heading ${cat.textColor} dark:text-foreground`}
-                >
-                  {cat.label}
-                </h3>
-                {cat.sub && (
-                  <p className="text-xs text-muted-foreground font-sans">
-                    {cat.sub}
-                  </p>
-                )}
-              </div>
-
-              {/* Image & Gradient Side */}
-              <div
-                className={`absolute right-0 top-0 h-full w-1/2 ${cat.color} clip-path-slant transition-transform group-hover:scale-105 duration-500`}
-              >
-                <img
-                  src={cat.img}
-                  alt={cat.label}
-                  className="w-full h-full object-cover mix-blend-multiply opacity-80"
-                />
-                <div className="absolute inset-0 bg-gradient-to-l from-transparent to-card/20" />
-              </div>
-            </div>
-          ))}
-
-          {/* View All Card */}
-          <div className="flex flex-col items-center justify-center h-32 rounded-2xl border border-border bg-muted/30 hover:bg-muted/50 transition-all cursor-pointer group">
-            <span className="text-xs text-muted-foreground font-sans">
-              View All
-            </span>
-            <h3 className="text-lg font-bold font-heading text-foreground mb-3">
-              Categories
-            </h3>
-            <div className="flex gap-4">
-              <button className="p-2 rounded-full border border-border bg-background hover:bg-accent transition-colors">
-                <ArrowLeft size={16} />
-              </button>
-              <button className="p-2 rounded-full border border-border bg-background hover:bg-accent transition-colors">
-                <ArrowRight size={16} />
-              </button>
-            </div>
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground"
+              style={{ fontFamily: "var(--font-heading)" }}>
+              {locationLabel}'s Most-Loved
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5"
+              style={{ fontFamily: "var(--font-sans)" }}>
+              Browse by category
+            </p>
           </div>
+          <button
+            onClick={() => navigate("/browse")}
+            className="text-xs font-semibold text-primary hover:text-primary/80 "
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
+            All categories →
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {categories.map(([slug, cat]) => (
+            <CategoryCard
+              key={slug}
+              slug={slug}
+              cat={cat}
+              onClick={(s) => navigate(buildCategoryUrl(s))}
+            />
+          ))}
         </div>
       </Container>
-
-      <style jsx>{`
-        .clip-path-slant {
-          clip-path: polygon(25% 0%, 100% 0%, 100% 100%, 0% 100%);
-        }
-      `}</style>
     </section>
   );
 };

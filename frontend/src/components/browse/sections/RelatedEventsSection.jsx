@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Calendar, MapPin, Star, BadgeCheck, BookmarkCheck, Bookmark } from "lucide-react";
 import Container from "@/components/layout/Container";
-import { useBrowse } from "@/hooks/useBrowse";
+import { useBrowse } from "@/hooks";
 
 const RelatedEventsSection = () => {
   const { getEvents, categorySlug, buildEventUrl, locationLabel, config } = useBrowse();
