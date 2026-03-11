@@ -11,7 +11,7 @@ import { resetSchema } from "@/utils/validators";
 import authConfig from "@/config/auth.config";
 
 // Shared components barrel import
-import { InputField, Button } from "@/components/shared";
+import { InputField, Button } from "@/components/shared/common";
 
 const ResetPasswordForm = () => {
   const [params] = useSearchParams();

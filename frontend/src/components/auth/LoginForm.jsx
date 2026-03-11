@@ -22,7 +22,7 @@ import {
   Button,
   Divider,
   UnverifiedBanner,
-} from "@/components/shared";
+} from "@/components/shared/common";
 
 const LoginForm = () => {
   const dispatch = useDispatch();

@@ -10,7 +10,7 @@ import { forgotSchema } from "@/utils/validators";
 import authConfig from "@/config/auth.config";
 
 // Shared components barrel import
-import { InputField, Button } from "@/components/shared";
+import { InputField, Button } from "@/components/shared/common";
 
 const ForgotPasswordForm = () => {
   const [sent, setSent] = useState(false);
