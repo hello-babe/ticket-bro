@@ -17,12 +17,60 @@ import {
 import authConfig from "@/config/auth.config";
 import SocialLogin from "./SocialLogin";
 import { loginSchema } from "@/utils/validators";
-import {
-  InputField,
-  Button,
-  Divider,
-  UnverifiedBanner,
-} from "@/components/shared/common";
+import { Divider, UnverifiedBanner } from "@/components/shared/common";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+
+// Local field wrapper — label + left/right icon slots + error message
+const Field = ({ id, label, error, left, right, className, ...props }) => (
+  <div className="flex flex-col gap-1 w-full">
+    {label && (
+      <Label
+        htmlFor={id}
+        className="text-[0.75rem] font-medium cursor-pointer select-none"
+      >
+        {label}
+      </Label>
+    )}
+    <div
+      className={cn(
+        "flex items-center gap-2 px-3 h-10 rounded-lg border transition-colors duration-150 cursor-text focus-within:ring-2 focus-within:ring-ring/30",
+        error
+          ? "border-destructive bg-destructive/5"
+          : "border-input bg-card hover:border-ring/60",
+      )}
+      onClick={() => document.getElementById(id)?.focus()}
+    >
+      {left && (
+        <span className="flex-shrink-0 text-muted-foreground leading-none">
+          {left}
+        </span>
+      )}
+      <input
+        id={id}
+        className={cn(
+          "flex-1 min-w-0 w-full bg-transparent outline-none border-none text-[0.875rem] text-foreground placeholder:text-muted-foreground/50",
+          "[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_hsl(var(--card))] [&:-webkit-autofill]:[-webkit-text-fill-color:hsl(var(--foreground))]",
+          "[&:-webkit-autofill:focus]:shadow-[inset_0_0_0_1000px_hsl(var(--card))] [&:-webkit-autofill]:transition-[background-color_9999s_ease]",
+          className,
+        )}
+        {...props}
+      />
+      {right && (
+        <span className="flex-shrink-0 text-muted-foreground leading-none">
+          {right}
+        </span>
+      )}
+    </div>
+    {error && (
+      <p className="text-[0.7rem] text-destructive leading-none mt-0.5">
+        {error}
+      </p>
+    )}
+  </div>
+);
 
 const LoginForm = () => {
   const dispatch = useDispatch();
@@ -104,7 +152,7 @@ const LoginForm = () => {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
-        <InputField
+        <Field
           id="email"
           label="Email address"
           error={errors.email?.message}
@@ -114,7 +162,7 @@ const LoginForm = () => {
           {...register("email")}
         />
 
-        <InputField
+        <Field
           id="password"
           label={
             <div className="flex items-center justify-between w-full">
@@ -175,9 +223,17 @@ const LoginForm = () => {
           </span>
         </label>
 
-        <Button type="submit" isLoading={isLoading}>
-          <span>Sign in</span>
-          <ArrowRight size={14} />
+        <Button type="submit" className="w-full mt-1" disabled={isLoading}>
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              Signing in…
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              Sign in <ArrowRight size={14} />
+            </span>
+          )}
         </Button>
       </form>
 
