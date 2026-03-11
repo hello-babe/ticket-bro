@@ -125,7 +125,7 @@ const AvatarUpload = ({ user, open, onOpenChange }) => {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-card border-none">
         <DialogHeader>
           <DialogTitle>Change Profile Picture</DialogTitle>
           <DialogDescription>
@@ -175,7 +175,7 @@ const AvatarUpload = ({ user, open, onOpenChange }) => {
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="w-full"
+              className="w-full border-none"
             >
               <Upload className="mr-2 h-4 w-4" />
               Choose New Image
