@@ -29,7 +29,7 @@ import OrganizerLayout from '@/components/layout/OrganizerLayout';
 import AdminLayout     from '@/components/layout/AdminLayout';
 
 // ── Critical path — eager ─────────────────────────────────────────────────────
-import BrowsePage       from '@/pages/browse/BrowsePage';
+import BrowsePage       from '@/pages/browse/BrowseAllPage';
 import CategoryPage     from '@/pages/browse/Category/CategoryPage';
 import SubCategoryPage  from '@/pages/browse/SubCategory/SubCategoryPage';
 import EventTypePage    from '@/pages/browse/EventType/EventTypePage';

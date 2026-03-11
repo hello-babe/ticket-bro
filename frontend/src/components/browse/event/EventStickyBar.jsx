@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from "react";
 import { Ticket, ChevronUp } from "lucide-react";
 import Container from "@/components/layout/Container";
-import { fmtDateShort, fmtTime } from "../shared/EventShared";
+import { fmtDateShort, fmtTime } from "./shared/EventShared.jsx";
 
 const EventStickyBar = ({ event, onBook }) => {
   const [visible, setVisible] = useState(false);
@@ -27,31 +27,49 @@ const EventStickyBar = ({ event, onBook }) => {
       style={{
         background: "var(--background)",
         transform: visible ? "translateY(0)" : "translateY(100%)",
-      }}>
+      }}
+    >
       <Container>
         <div className="flex items-center justify-between gap-4 py-3">
           <div className="min-w-0 hidden sm:block">
-            <p className="text-sm font-bold text-foreground truncate"
-              style={{ fontFamily: "var(--font-heading)" }}>{event.title}</p>
-            <p className="text-xs text-muted-foreground"
-              style={{ fontFamily: "var(--font-sans)" }}>
-              {fmtDateShort(event.startDate)} · {fmtTime(event.startDate)} · {event.location?.name || event.location?.city}
+            <p
+              className="text-sm font-bold text-foreground truncate"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {event.title}
+            </p>
+            <p
+              className="text-xs text-muted-foreground"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              {fmtDateShort(event.startDate)} · {fmtTime(event.startDate)} ·{" "}
+              {event.location?.name || event.location?.city}
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0 ml-auto">
             <div className="text-right">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide"
-                style={{ fontFamily: "var(--font-sans)" }}>Price</p>
-              <p className="text-lg font-extrabold text-foreground"
-                style={{ fontFamily: "var(--font-heading)" }}>{priceLabel}</p>
+              <p
+                className="text-[10px] text-muted-foreground uppercase tracking-wide"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                Price
+              </p>
+              <p
+                className="text-lg font-extrabold text-foreground"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {priceLabel}
+              </p>
             </div>
-            <button onClick={onBook}
+            <button
+              onClick={onBook}
               className="flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-[0.98]"
               style={{
                 background: "var(--foreground)",
                 color: "var(--background)",
                 fontFamily: "var(--font-sans)",
-              }}>
+              }}
+            >
               <Ticket size={14} /> Get Tickets
             </button>
           </div>
