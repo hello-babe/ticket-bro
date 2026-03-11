@@ -29,7 +29,7 @@ import {
   selectUserLoading,
 } from "@/store/slices/userSlice";
 import { logoutUser } from "@/store/slices/authSlice";
-import AvatarUpload from "@/components/user/AvatarUpload";
+import AvatarUpload from "@/components/roles/user/AvatarUpload";
 import { ROUTES } from "@/app/AppRoutes";
 
 // ── Role badge ────────────────────────────────────────────────────────────────

@@ -36,26 +36,40 @@
 // ════════════════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate }          from "react-router-dom";
-import { User, X }                    from "lucide-react";
-import { Button }                              from "@/components/ui/button";
+import { Link, useNavigate } from "react-router-dom";
+import { User, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge }                               from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuLabel,
-  DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import AvatarUpload from "@/components/user/AvatarUpload";
-import { useAuth }  from "@/context/AuthContext";
+import AvatarUpload from "@/components/roles/user/AvatarUpload";
+import { useAuth } from "@/context/AuthContext";
 import {
-  getFullName, getInitials, buildUserSections,
-  DropdownContent, SidebarContent, SheetContent,
+  getFullName,
+  getInitials,
+  buildUserSections,
+  DropdownContent,
+  SidebarContent,
+  SheetContent,
 } from "@/components/layout/MenuSheet";
 
 // ════════════════════════════════════════════════════════════════════
 //  DROPDOWN MODE — desktop header
 // ════════════════════════════════════════════════════════════════════
-const DropdownMode = ({ user, fullName, initials, userSections, onAvatarClick, onLogout }) => (
+const DropdownMode = ({
+  user,
+  fullName,
+  initials,
+  userSections,
+  onAvatarClick,
+  onLogout,
+}) => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
       <Button
@@ -72,12 +86,23 @@ const DropdownMode = ({ user, fullName, initials, userSections, onAvatarClick, o
       </Button>
     </DropdownMenuTrigger>
 
-    <DropdownMenuContent align="end" className="w-56 max-w-[calc(100vw-1rem)] border-none" sideOffset={8}>
+    <DropdownMenuContent
+      align="end"
+      className="w-56 max-w-[calc(100vw-1rem)] border-none"
+      sideOffset={8}
+    >
       {/* User info header */}
       <DropdownMenuLabel className="py-2.5 px-3">
-        <p className="text-sm font-semibold leading-none truncate">{fullName}</p>
-        <p className="text-xs text-muted-foreground truncate mt-1">{user?.email}</p>
-        <Badge variant="outline" className="mt-1.5 w-fit text-[10px] px-1.5 py-0 capitalize">
+        <p className="text-sm font-semibold leading-none truncate">
+          {fullName}
+        </p>
+        <p className="text-xs text-muted-foreground truncate mt-1">
+          {user?.email}
+        </p>
+        <Badge
+          variant="outline"
+          className="mt-1.5 w-fit text-[10px] px-1.5 py-0 capitalize"
+        >
           {user?.role}
         </Badge>
       </DropdownMenuLabel>
@@ -103,7 +128,11 @@ const DropdownGuest = () => (
     >
       <User className="h-3.5 w-3.5" /> Sign In
     </Link>
-    <Button size="sm" className="h-9 px-3 text-sm shrink-0 hidden sm:flex" asChild>
+    <Button
+      size="sm"
+      className="h-9 px-3 text-sm shrink-0 hidden sm:flex"
+      asChild
+    >
       <Link to="?auth=register">Get Started</Link>
     </Button>
   </>
@@ -158,18 +187,18 @@ const SheetWrapper = ({ open, onClose, children }) => {
 //  MAIN EXPORT
 // ════════════════════════════════════════════════════════════════════
 const UserMenu = ({
-  mode         = "dropdown", // "dropdown" | "sidebar" | "sheet"
-  open         = false,      // sheet mode: controls visibility
-  onClose      = () => {},   // sidebar + sheet: called on nav or close
-  onBrowseOpen = null,       // sidebar only: opens BrowseSubPanel in Header
+  mode = "dropdown", // "dropdown" | "sidebar" | "sheet"
+  open = false, // sheet mode: controls visibility
+  onClose = () => {}, // sidebar + sheet: called on nav or close
+  onBrowseOpen = null, // sidebar only: opens BrowseSubPanel in Header
 }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
 
   // Derived from auth state
-  const fullName    = getFullName(user);
-  const initials    = getInitials(user);
+  const fullName = getFullName(user);
+  const initials = getInitials(user);
   // Role-gated sections — empty array for guests
   const userSections = isAuthenticated ? buildUserSections(user) : [];
 
@@ -190,37 +219,28 @@ const UserMenu = ({
     userSections,
     onClose,
     onAvatarClick: handleAvatarClick,
-    onLogout:      handleLogout,
+    onLogout: handleLogout,
   };
 
   return (
     <>
       {/* ── Dropdown ──────────────────────────────────────────────── */}
-      {mode === "dropdown" && (
-        isAuthenticated ? (
-          <DropdownMode
-            {...contentProps}
-          />
+      {mode === "dropdown" &&
+        (isAuthenticated ? (
+          <DropdownMode {...contentProps} />
         ) : (
           <DropdownGuest />
-        )
-      )}
+        ))}
 
       {/* ── Sidebar ───────────────────────────────────────────────── */}
       {mode === "sidebar" && (
-        <SidebarContent
-          {...contentProps}
-          onBrowseOpen={onBrowseOpen}
-        />
+        <SidebarContent {...contentProps} onBrowseOpen={onBrowseOpen} />
       )}
 
       {/* ── Sheet ─────────────────────────────────────────────────── */}
       {mode === "sheet" && (
         <SheetWrapper open={open} onClose={onClose}>
-          <SheetContent
-            {...contentProps}
-            navigate={navigate}
-          />
+          <SheetContent {...contentProps} navigate={navigate} />
         </SheetWrapper>
       )}
 
