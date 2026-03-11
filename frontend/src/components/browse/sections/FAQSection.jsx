@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Container from "@/components/layout/Container";
 import { ChevronDown } from "lucide-react";
-import { useBrowse } from "@/hooks/useBrowse";
+import { useBrowse } from "@/hooks";
 
 const DEFAULT_FAQS = [
   { q: "How do I book tickets?", a: "Browse events, select your tickets, add to cart and checkout securely with your preferred payment method." },

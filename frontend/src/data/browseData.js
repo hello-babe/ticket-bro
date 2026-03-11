@@ -1,12 +1,24 @@
 /**
- * browseData.js — Single source of truth for all browse mock/static data.
+ * browseData.js
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Single source of truth for all browse mock/seed data.
  *
- * Production replacement guide:
- *   EVENTS_POOL  → GET /api/events?{category,sub,type,location,page,limit,sort,...}
- *   CATEGORY_MAP → GET /api/categories  (or embedded app config)
- *   FEATURED / TRENDING / NEARBY etc. → GET /api/events/{featured|trending|nearby}?location=dhaka
+ * Field names EXACTLY match event.model.js (after normaliseEvent()):
+ *   slug, title, shortDescription, isFree, minPrice, maxPrice, currency
+ *   averageRating, reviewCount, trendScore, totalSold, totalCapacity, spotsLeft
+ *   isFeatured, isTrending, isVerified, isSponsored
+ *   location.city, location.name
+ *   category._id/slug/name, subcategory.slug, eventType.slug
+ *   startDate, endDate
+ *   tags[]
+ *   images[], coverImage
  *
- * All browse components import from here — never define inline mock data.
+ * Production replacement:
+ *   EVENTS_POOL  →  GET /api/events?status=published&visibility=public&location.city=dhaka
+ *   CATEGORY_MAP →  GET /api/categories (populated with subcategory counts)
+ *   REVIEWS_POOL →  GET /api/reviews?location.city=dhaka&limit=6
+ *   PLATFORM_STATS → GET /api/stats or /api/analytics/platform
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 import {
@@ -14,69 +26,77 @@ import {
   GraduationCap, Heart, Cpu, Baby, Users, Layers,
 } from "lucide-react";
 
-/* ═══════════════════════════════════════════════════════════════
-   CATEGORY CONFIG
-═══════════════════════════════════════════════════════════════ */
+// ── Category map ──────────────────────────────────────────────────────────
 export const CATEGORY_MAP = {
   music: {
     label: "Music", icon: Music,
     description: "Live concerts, festivals, club nights and more.",
     totalEvents: 1284, cities: 48, thisWeek: 73,
-    subcategories: ["Concerts", "Festivals", "Club Nights", "Live Bands", "Open Mic"],
+    subcategories: ["concerts", "festivals", "club-nights", "live-bands", "open-mic"],
+    subcategoryLabels: { concerts: "Concerts", festivals: "Festivals", "club-nights": "Club Nights", "live-bands": "Live Bands", "open-mic": "Open Mic" },
   },
   sports: {
     label: "Sports", icon: Dumbbell,
     description: "Football, cricket, tennis, and every sport in between.",
     totalEvents: 894, cities: 32, thisWeek: 51,
-    subcategories: ["Football", "Cricket", "Tennis", "Basketball", "Athletics"],
+    subcategories: ["football", "cricket", "tennis", "basketball", "athletics"],
+    subcategoryLabels: { football: "Football", cricket: "Cricket", tennis: "Tennis", basketball: "Basketball", athletics: "Athletics" },
   },
   "arts-culture": {
     label: "Arts & Culture", icon: Palette,
     description: "Theatre, exhibitions, film screenings, and performances.",
     totalEvents: 642, cities: 27, thisWeek: 38,
-    subcategories: ["Theatre", "Exhibitions", "Film", "Dance", "Literature"],
+    subcategories: ["theatre", "exhibitions", "film", "dance", "literature"],
+    subcategoryLabels: { theatre: "Theatre", exhibitions: "Exhibitions", film: "Film", dance: "Dance", literature: "Literature" },
   },
   "food-drink": {
     label: "Food & Drink", icon: UtensilsCrossed,
     description: "Pop-ups, tastings, dining events, and food festivals.",
     totalEvents: 431, cities: 19, thisWeek: 29,
-    subcategories: ["Dining", "Tastings", "Pop-Up", "Street Food", "Wine"],
+    subcategories: ["dining", "tastings", "pop-up", "street-food", "wine"],
+    subcategoryLabels: { dining: "Dining", tastings: "Tastings", "pop-up": "Pop-Up", "street-food": "Street Food", wine: "Wine" },
   },
   business: {
     label: "Business", icon: Briefcase,
     description: "Conferences, networking, expos, and workshops.",
     totalEvents: 318, cities: 22, thisWeek: 17,
-    subcategories: ["Conferences", "Networking", "Workshops", "Seminars", "Expos"],
+    subcategories: ["conferences", "networking", "workshops", "seminars", "expos"],
+    subcategoryLabels: { conferences: "Conferences", networking: "Networking", workshops: "Workshops", seminars: "Seminars", expos: "Expos" },
   },
   education: {
     label: "Education", icon: GraduationCap,
     description: "Lectures, courses, seminars, and bootcamps.",
     totalEvents: 276, cities: 18, thisWeek: 21,
-    subcategories: ["Seminars", "Courses", "Workshops", "Lectures", "Boot Camps"],
+    subcategories: ["seminars", "courses", "workshops", "lectures", "boot-camps"],
+    subcategoryLabels: { seminars: "Seminars", courses: "Courses", workshops: "Workshops", lectures: "Lectures", "boot-camps": "Boot Camps" },
   },
   health: {
     label: "Health & Wellness", icon: Heart,
     description: "Yoga, meditation, fitness classes, and wellness retreats.",
     totalEvents: 509, cities: 30, thisWeek: 44,
-    subcategories: ["Yoga", "Meditation", "Fitness", "Nutrition", "Mental Health"],
+    subcategories: ["yoga", "meditation", "fitness", "nutrition", "mental-health"],
+    subcategoryLabels: { yoga: "Yoga", meditation: "Meditation", fitness: "Fitness", nutrition: "Nutrition", "mental-health": "Mental Health" },
   },
   technology: {
     label: "Technology", icon: Cpu,
     description: "Hackathons, meetups, AI events, and developer gatherings.",
     totalEvents: 387, cities: 24, thisWeek: 33,
-    subcategories: ["Hackathons", "Meetups", "AI & ML", "Web Dev", "Startups"],
+    subcategories: ["hackathons", "meetups", "ai-ml", "web-dev", "startups"],
+    subcategoryLabels: { hackathons: "Hackathons", meetups: "Meetups", "ai-ml": "AI & ML", "web-dev": "Web Dev", startups: "Startups" },
   },
   "kids-family": {
     label: "Kids & Family", icon: Baby,
     description: "Shows, activities, and experiences for the whole family.",
     totalEvents: 223, cities: 15, thisWeek: 19,
-    subcategories: ["Shows", "Outdoor", "Indoor", "Workshops", "Storytelling"],
+    subcategories: ["shows", "outdoor", "indoor", "workshops", "storytelling"],
+    subcategoryLabels: { shows: "Shows", outdoor: "Outdoor", indoor: "Indoor", workshops: "Workshops", storytelling: "Storytelling" },
   },
   community: {
     label: "Community", icon: Users,
     description: "Charity runs, markets, volunteering, and local gatherings.",
     totalEvents: 194, cities: 21, thisWeek: 16,
-    subcategories: ["Charity", "Markets", "Volunteering", "Fundraisers", "Local"],
+    subcategories: ["charity", "markets", "volunteering", "fundraisers", "local"],
+    subcategoryLabels: { charity: "Charity", markets: "Markets", volunteering: "Volunteering", fundraisers: "Fundraisers", local: "Local" },
   },
 };
 
@@ -84,56 +104,454 @@ export const ALL_EVENTS_CONFIG = {
   label: "All Events", icon: Layers,
   description: "Explore thousands of events across every category and city.",
   totalEvents: 5442, cities: 60, thisWeek: 312,
-  subcategories: [],
+  subcategories: [], subcategoryLabels: {},
 };
 
-/* ═══════════════════════════════════════════════════════════════
-   MASTER EVENTS POOL
-   Shape matches API response. All sections filter from this pool.
-   In production: swap getFilteredEvents() to real API calls.
-═══════════════════════════════════════════════════════════════ */
+// ── Master events pool ─────────────────────────────────────────────────────
+// Fields map to normaliseEvent() output (which mirrors event.model.js).
+// UI-only flags prefixed with _ (no model field).
 export const EVENTS_POOL = [
-  // ── MUSIC ──────────────────────────────────────────────────────
-  { id: 1,  slug: "dhaka-jazz-festival-2025",   title: "Dhaka Jazz Festival 2025",         category: "music",        subCategory: "festivals",   eventType: "multi-day",      organizer: "Bangladesh Jazz Foundation", verified: true,  date: "Sat, Mar 15", time: "6:00 PM",  venue: "ICCB, Agargaon",              city: "dhaka",      price: 1200, priceLabel: "৳1,200", rating: 4.8, reviewCount: 124, attendees: 843,  capacity: 1000,  spotsLeft: 157,  trendScore: 88, featured: true,  image: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&q=80", tags: ["Jazz","Festival","Live Music"],    trendLabel: "📈 Rising",      reason: "Popular in your area",    distance: "2.4 km", newArrival: false, editorsPick: true },
-  { id: 2,  slug: "synthwave-night-dhaka",      title: "Synthwave Night: Neon Dreams",     category: "music",        subCategory: "club-nights", eventType: "dj-sets",        organizer: "Noir Events",               verified: true,  date: "Fri, Mar 21", time: "9:00 PM",  venue: "Club Noir, Gulshan",          city: "dhaka",      price: 600,  priceLabel: "৳600",   rating: 4.6, reviewCount: 87,  attendees: 210,  capacity: 300,   spotsLeft: 90,   trendScore: 91, featured: false, image: "https://images.unsplash.com/photo-1571266028243-d220c6a6db90?w=800&q=80", tags: ["Electronic","Club","Neon"],        trendLabel: "📈 Rising",      reason: "Based on your interests", distance: "5.1 km", newArrival: true,  editorsPick: false },
-  { id: 3,  slug: "rock-arena-2025",            title: "Rock Arena Bangladesh 2025",       category: "music",        subCategory: "concerts",    eventType: "live-bands",     organizer: "Arena Live",                verified: true,  date: "Sat, Mar 29", time: "5:00 PM",  venue: "Bangabandhu Stadium",         city: "dhaka",      price: 2500, priceLabel: "৳2,500", rating: 4.9, reviewCount: 312, attendees: 14500, capacity: 20000, spotsLeft: 5500, trendScore: 99, featured: true,  image: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80", tags: ["Rock","Stadium","Concert"],        trendLabel: "🔥 Selling Fast", reason: "Top rated this month",    distance: "4.7 km", newArrival: false, editorsPick: true },
-  { id: 4,  slug: "solo-acoustic-night",        title: "Solo Acoustic Night",              category: "music",        subCategory: "concerts",    eventType: "solo-artists",   organizer: "Acoustic Studio BD",        verified: false, date: "Thu, Mar 20", time: "8:00 PM",  venue: "The Alley, Dhanmondi",        city: "dhaka",      price: 400,  priceLabel: "৳400",   rating: 4.5, reviewCount: 48,  attendees: 80,   capacity: 120,   spotsLeft: 40,   trendScore: 60, featured: false, image: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&q=80", tags: ["Acoustic","Solo","Intimate"],      trendLabel: "🆕 New",          reason: "New this week",           distance: "1.8 km", newArrival: true,  editorsPick: false },
-  { id: 5,  slug: "open-mic-friday",            title: "Friday Open Mic Dhaka",            category: "music",        subCategory: "open-mic",    eventType: "music",          organizer: "Stage Fright Events",       verified: false, date: "Fri, Mar 28", time: "7:00 PM",  venue: "Café Uprising, Dhanmondi",    city: "dhaka",      price: 0,    priceLabel: "Free",   rating: 4.4, reviewCount: 62,  attendees: 95,   capacity: 150,   spotsLeft: 55,   trendScore: 72, featured: false, image: "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=800&q=80", tags: ["Open Mic","Free","Community"],     trendLabel: "🔥 Selling Fast", reason: "Free events near you",    distance: "0.9 km", newArrival: false, editorsPick: false },
-  { id: 6,  slug: "live-bands-showdown",        title: "Live Bands Showdown 2025",         category: "music",        subCategory: "concerts",    eventType: "live-bands",     organizer: "BandHub BD",                verified: true,  date: "Sat, Apr 5",  time: "6:00 PM",  venue: "Bashundhara City Arena",      city: "dhaka",      price: 1500, priceLabel: "৳1,500", rating: 4.8, reviewCount: 175, attendees: 2100, capacity: 3000,  spotsLeft: 900,  trendScore: 85, featured: true,  image: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&q=80", tags: ["Live Bands","Rock","Competition"], trendLabel: "📈 Rising",      reason: "Popular with rock fans",  distance: "8.2 km", newArrival: false, editorsPick: true },
-  { id: 7,  slug: "dhaka-music-weekend",        title: "Dhaka Music Weekend",              category: "music",        subCategory: "festivals",   eventType: "multi-day",      organizer: "SoundWave BD",              verified: true,  date: "Sat, Mar 22", time: "4:00 PM",  venue: "Hatirjheel Amphitheatre",     city: "dhaka",      price: 900,  priceLabel: "৳900",   rating: 4.7, reviewCount: 98,  attendees: 720,  capacity: 900,   spotsLeft: 180,  trendScore: 98, featured: true,  image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&q=80", tags: ["Music","Outdoor","Weekend"],       trendLabel: "🔥 Selling Fast", reason: "Outdoor festival",        distance: "3.5 km", newArrival: false, editorsPick: false },
-  { id: 8,  slug: "beats-bass-dhaka",           title: "Beats & Bass — Dhaka Edition",    category: "music",        subCategory: "club-nights", eventType: "dj-sets",        organizer: "Bassline Productions",      verified: true,  date: "Fri, Mar 28", time: "10:00 PM", venue: "Sky Lounge, Banani",          city: "dhaka",      price: 800,  priceLabel: "৳800",   rating: 4.5, reviewCount: 73,  attendees: 180,  capacity: 250,   spotsLeft: 70,   trendScore: 91, featured: false, image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80", tags: ["EDM","Bass","Club"],               trendLabel: "📈 Rising",      reason: "Trending in Dhaka",       distance: "6.0 km", newArrival: false, editorsPick: false },
-  { id: 9,  slug: "acoustic-cafe-sessions",     title: "Acoustic Café Sessions Vol. 7",   category: "music",        subCategory: "concerts",    eventType: "solo-artists",   organizer: "Café Harmony",              verified: false, date: "Sun, Mar 23", time: "7:00 PM",  venue: "Café Harmony, Gulshan",       city: "dhaka",      price: 350,  priceLabel: "৳350",   rating: 4.6, reviewCount: 55,  attendees: 60,   capacity: 80,    spotsLeft: 20,   trendScore: 65, featured: false, image: "https://images.unsplash.com/photo-1525201548942-d8732f6617a0?w=800&q=80", tags: ["Acoustic","Café","Intimate"],      trendLabel: "🆕 New",          reason: "Almost sold out",         distance: "5.5 km", newArrival: true,  editorsPick: false },
-  { id: 10, slug: "live-bands-battle",          title: "Live Bands Battle Night",          category: "music",        subCategory: "concerts",    eventType: "live-bands",     organizer: "Rock Circuit BD",           verified: true,  date: "Sat, Apr 12", time: "6:00 PM",  venue: "Osmani Memorial Hall",        city: "dhaka",      price: 600,  priceLabel: "৳600",   rating: 4.8, reviewCount: 134, attendees: 850,  capacity: 1200,  spotsLeft: 350,  trendScore: 82, featured: false, image: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&q=80", tags: ["Live Bands","Battle","Rock"],      trendLabel: "📈 Rising",      reason: "Editor's choice",         distance: "4.1 km", newArrival: false, editorsPick: true },
-  // ── SPORTS ─────────────────────────────────────────────────────
-  { id: 11, slug: "bd-premier-league-final",    title: "BD Premier League Final",          category: "sports",       subCategory: "football",    eventType: "league-matches", organizer: "BFF",                       verified: true,  date: "Fri, Mar 14", time: "7:00 PM",  venue: "Bangabandhu Stadium",         city: "dhaka",      price: 500,  priceLabel: "৳500",   rating: 4.7, reviewCount: 203, attendees: 18000, capacity: 20000, spotsLeft: 2000, trendScore: 97, featured: true,  image: "https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=800&q=80", tags: ["Football","League","Final"],       trendLabel: "🔥 Selling Fast", reason: "National event",          distance: "4.7 km", newArrival: false, editorsPick: true },
-  { id: 12, slug: "dhaka-cricket-cup",          title: "Dhaka Premier Cricket Cup",        category: "sports",       subCategory: "cricket",     eventType: "t20",            organizer: "BCB",                       verified: true,  date: "Sun, Mar 30", time: "3:00 PM",  venue: "Sher-e-Bangla Stadium",       city: "dhaka",      price: 400,  priceLabel: "৳400",   rating: 4.8, reviewCount: 189, attendees: 22000, capacity: 26000, spotsLeft: 4000, trendScore: 96, featured: true,  image: "https://images.unsplash.com/photo-1540747913346-19212a4c3ae2?w=800&q=80", tags: ["Cricket","T20","Stadium"],         trendLabel: "🔥 Selling Fast", reason: "Top rated event",         distance: "7.2 km", newArrival: false, editorsPick: true },
-  // ── ARTS & CULTURE ─────────────────────────────────────────────
-  { id: 13, slug: "dhaka-theatre-gala",         title: "Dhaka Theatre Gala Night",         category: "arts-culture", subCategory: "theatre",     eventType: "drama",          organizer: "National Theatre BD",       verified: true,  date: "Sat, Mar 22", time: "7:30 PM",  venue: "National Theatre, Shahbag",   city: "dhaka",      price: 800,  priceLabel: "৳800",   rating: 4.7, reviewCount: 91,  attendees: 380,  capacity: 500,   spotsLeft: 120,  trendScore: 78, featured: true,  image: "https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&q=80", tags: ["Theatre","Drama","Culture"],       trendLabel: "📈 Rising",      reason: "Arts pick of the week",   distance: "3.2 km", newArrival: false, editorsPick: true },
-  { id: 14, slug: "art-exhibition-dhaka",       title: "Contemporary Art Exhibition",      category: "arts-culture", subCategory: "exhibitions", eventType: "visual-art",     organizer: "Bengal Foundation",         verified: true,  date: "Sat, Mar 15", time: "10:00 AM", venue: "Bengal Arts Precinct, Gulshan",city: "dhaka",     price: 0,    priceLabel: "Free",   rating: 4.6, reviewCount: 67,  attendees: 520,  capacity: 1000,  spotsLeft: 480,  trendScore: 70, featured: false, image: "https://images.unsplash.com/photo-1531243269054-5ebf6f34081e?w=800&q=80", tags: ["Art","Exhibition","Free"],         trendLabel: "🆕 New",          reason: "Free admission",          distance: "5.8 km", newArrival: true,  editorsPick: false },
-  // ── FOOD & DRINK ───────────────────────────────────────────────
-  { id: 15, slug: "dhaka-food-fest-2025",       title: "Dhaka Food Festival 2025",         category: "food-drink",   subCategory: "pop-up",      eventType: "festival",       organizer: "Food BD Network",           verified: true,  date: "Fri, Apr 4",  time: "12:00 PM", venue: "Hatirjheel, Dhaka",           city: "dhaka",      price: 200,  priceLabel: "৳200",   rating: 4.7, reviewCount: 145, attendees: 3200, capacity: 5000,  spotsLeft: 1800, trendScore: 93, featured: true,  image: "https://images.unsplash.com/photo-1555244162-803834f70033?w=800&q=80", tags: ["Food","Festival","Outdoor"],       trendLabel: "🔥 Selling Fast", reason: "Most loved food event",   distance: "3.5 km", newArrival: false, editorsPick: true },
-  // ── TECHNOLOGY ─────────────────────────────────────────────────
-  { id: 16, slug: "dhaka-hackathon-2025",       title: "Dhaka Hackathon 2025",             category: "technology",   subCategory: "hackathons",  eventType: "competition",    organizer: "Tech BD Collective",        verified: true,  date: "Sat, Apr 5",  time: "9:00 AM",  venue: "BRAC University, Mohakhali",  city: "dhaka",      price: 0,    priceLabel: "Free",   rating: 4.8, reviewCount: 112, attendees: 540,  capacity: 800,   spotsLeft: 260,  trendScore: 89, featured: true,  image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80", tags: ["Hackathon","Tech","Free"],         trendLabel: "📈 Rising",      reason: "Developer community pick", distance: "9.1 km", newArrival: false, editorsPick: false },
-  { id: 17, slug: "ai-summit-dhaka",            title: "AI & ML Summit Dhaka 2025",        category: "technology",   subCategory: "ai-ml",       eventType: "conference",     organizer: "DataBD",                    verified: true,  date: "Fri, Apr 11", time: "9:00 AM",  venue: "Pan Pacific Hotel, Kawran Bazar", city: "dhaka",   price: 2000, priceLabel: "৳2,000", rating: 4.9, reviewCount: 88,  attendees: 620,  capacity: 800,   spotsLeft: 180,  trendScore: 94, featured: true,  image: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&q=80", tags: ["AI","ML","Conference"],            trendLabel: "🔥 Selling Fast", reason: "Fastest growing event",   distance: "6.5 km", newArrival: false, editorsPick: true },
-  // ── HEALTH ─────────────────────────────────────────────────────
-  { id: 18, slug: "morning-yoga-dhaka",         title: "Morning Yoga in the Park",         category: "health",       subCategory: "yoga",        eventType: "class",          organizer: "Dhaka Yoga Studio",         verified: false, date: "Sun, Mar 16", time: "7:00 AM",  venue: "Ramna Park, Dhaka",           city: "dhaka",      price: 150,  priceLabel: "৳150",   rating: 4.5, reviewCount: 43,  attendees: 45,   capacity: 60,    spotsLeft: 15,   trendScore: 58, featured: false, image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80", tags: ["Yoga","Outdoor","Morning"],        trendLabel: "🆕 New",          reason: "Near your location",      distance: "0.6 km", newArrival: true,  editorsPick: false },
-  // ── BUSINESS ───────────────────────────────────────────────────
-  { id: 19, slug: "startup-summit-dhaka",       title: "Bangladesh Startup Summit 2025",   category: "business",     subCategory: "conferences", eventType: "summit",         organizer: "Startup BD",                verified: true,  date: "Thu, Apr 3",  time: "9:00 AM",  venue: "Radisson Blu Hotel, Dhaka",   city: "dhaka",      price: 3000, priceLabel: "৳3,000", rating: 4.8, reviewCount: 97,  attendees: 750,  capacity: 1000,  spotsLeft: 250,  trendScore: 87, featured: true,  image: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80", tags: ["Startup","Business","Networking"], trendLabel: "📈 Rising",      reason: "Business community pick", distance: "7.8 km", newArrival: false, editorsPick: true },
-  // ── OTHER CITIES ───────────────────────────────────────────────
-  { id: 20, slug: "chittagong-rock-fest",       title: "Chittagong Rock Fest 2025",        category: "music",        subCategory: "festivals",   eventType: "outdoor",        organizer: "CTG Music Society",         verified: true,  date: "Sat, Apr 19", time: "5:00 PM",  venue: "MA Aziz Stadium, Chittagong", city: "chittagong", price: 1000, priceLabel: "৳1,000", rating: 4.9, reviewCount: 201, attendees: 4200, capacity: 6000,  spotsLeft: 1800, trendScore: 95, featured: true,  image: "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80", tags: ["Rock","Festival","Chittagong"],    trendLabel: "🔥 Selling Fast", reason: "Top in Chittagong",       distance: "2.1 km", newArrival: false, editorsPick: true },
-  { id: 21, slug: "sylhet-classical-night",     title: "Sylhet Classical Music Night",     category: "music",        subCategory: "concerts",    eventType: "live-bands",     organizer: "Sylhet Arts Council",       verified: true,  date: "Fri, Apr 11", time: "7:00 PM",  venue: "Osmani Museum Hall, Sylhet",  city: "sylhet",     price: 500,  priceLabel: "৳500",   rating: 4.7, reviewCount: 66,  attendees: 280,  capacity: 400,   spotsLeft: 120,  trendScore: 76, featured: false, image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=800&q=80", tags: ["Classical","Live","Sylhet"],       trendLabel: "📈 Rising",      reason: "Top in Sylhet",           distance: "1.3 km", newArrival: false, editorsPick: false },
-  { id: 22, slug: "london-bd-music-night",      title: "Bangladesh Night London",          category: "music",        subCategory: "concerts",    eventType: "cultural",       organizer: "BD Cultural UK",            verified: true,  date: "Sat, Apr 26", time: "7:00 PM",  venue: "Troxy Theatre, London",       city: "london",     price: 1800, priceLabel: "৳1,800", rating: 4.8, reviewCount: 142, attendees: 820,  capacity: 1000,  spotsLeft: 180,  trendScore: 88, featured: true,  image: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80", tags: ["Cultural","Bangladesh","London"],  trendLabel: "📈 Rising",      reason: "Popular in London",       distance: "3.4 km", newArrival: false, editorsPick: true },
-  { id: 23, slug: "dubai-cultural-fest",        title: "South Asian Cultural Festival",    category: "arts-culture", subCategory: "exhibitions", eventType: "cultural",       organizer: "Dubai Cultural Centre",     verified: true,  date: "Thu, Apr 10", time: "5:00 PM",  venue: "Expo City Dubai",             city: "dubai",      price: 2200, priceLabel: "৳2,200", rating: 4.7, reviewCount: 113, attendees: 3400, capacity: 5000,  spotsLeft: 1600, trendScore: 91, featured: true,  image: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80", tags: ["Cultural","Dubai","Arts"],         trendLabel: "🔥 Selling Fast", reason: "Popular in Dubai",        distance: "4.2 km", newArrival: false, editorsPick: false },
-  // ── EDUCATION ──────────────────────────────────────────────────
-  { id: 24, slug: "web-dev-bootcamp-dhaka",     title: "Full-Stack Web Dev Bootcamp",      category: "education",    subCategory: "boot-camps",  eventType: "workshop",       organizer: "Code Academy BD",           verified: true,  date: "Sat, Apr 5",  time: "9:00 AM",  venue: "Creative IT, Dhanmondi",      city: "dhaka",      price: 1500, priceLabel: "৳1,500", rating: 4.8, reviewCount: 76,  attendees: 28,   capacity: 40,    spotsLeft: 12,   trendScore: 80, featured: false, image: "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=800&q=80", tags: ["Coding","Web Dev","Workshop"],     trendLabel: "🆕 New",          reason: "Limited seats",           distance: "1.1 km", newArrival: true,  editorsPick: false },
-  // ── COMMUNITY ──────────────────────────────────────────────────
-  { id: 25, slug: "dhaka-charity-run-2025",     title: "Dhaka Charity Run 5K 2025",        category: "community",    subCategory: "charity",     eventType: "run",            organizer: "Run for Hope BD",           verified: true,  date: "Sun, Mar 23", time: "6:00 AM",  venue: "Hatirjheel, Dhaka",           city: "dhaka",      price: 300,  priceLabel: "৳300",   rating: 4.6, reviewCount: 88,  attendees: 1200, capacity: 2000,  spotsLeft: 800,  trendScore: 83, featured: false, image: "https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800&q=80", tags: ["Charity","Run","Community"],       trendLabel: "📈 Rising",      reason: "Community favourite",     distance: "3.5 km", newArrival: false, editorsPick: false },
+  // ── MUSIC ───────────────────────────────────────────────────────────────
+  {
+    _id: "1", slug: "dhaka-jazz-festival-2025",
+    title: "Dhaka Jazz Festival 2025",
+    shortDescription: "Bangladesh's premier jazz event returns for 2025.",
+    // taxonomy (slug references — production uses ObjectIds)
+    category: { slug: "music",   name: "Music"   },
+    subcategory: { slug: "festivals", name: "Festivals" },
+    eventType:   { slug: "multi-day", name: "Multi-Day" },
+    // organizer (populated User + Organizer)
+    organizer: { name: "Bangladesh Jazz Foundation", isVerified: true },
+    // schedule
+    startDate: new Date("2025-03-15T18:00:00+06:00"),
+    endDate:   new Date("2025-03-15T23:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    // location (locationSchema)
+    location: { type: "physical", name: "ICCB, Agargaon", city: "dhaka", country: "Bangladesh", addressLabel: "ICCB, Agargaon, Dhaka, Bangladesh" },
+    // pricing
+    isFree: false, minPrice: 1200, maxPrice: 1200, currency: "BDT",
+    // capacity (event.model.js fields)
+    totalCapacity: 1000, totalSold: 843, totalReserved: 0, spotsLeft: 157,
+    // flags
+    isFeatured: true, isTrending: false, isVerified: true, isSponsored: false,
+    // analytics
+    averageRating: 4.8, reviewCount: 124, trendScore: 88,
+    viewCount: 4200, likeCount: 312, bookmarkCount: 145,
+    // media
+    coverImage: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&q=80"],
+    tags: [{ name: "Jazz" }, { name: "Festival" }, { name: "Live Music" }],
+    // UI-only browse helpers (not in model)
+    _trendLabel: "📈 Rising", _editorsPick: true, _newArrival: false,
+    _reason: "Popular in your area", _distance: "2.4 km",
+  },
+  {
+    _id: "2", slug: "synthwave-night-dhaka",
+    title: "Synthwave Night: Neon Dreams",
+    shortDescription: "A neon-soaked evening of synthwave and retrowave.",
+    category: { slug: "music",   name: "Music"   },
+    subcategory: { slug: "club-nights", name: "Club Nights" },
+    eventType:   { slug: "dj-sets",     name: "DJ Sets"     },
+    organizer: { name: "Noir Events", isVerified: true },
+    startDate: new Date("2025-03-21T21:00:00+06:00"),
+    endDate:   new Date("2025-03-22T02:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "Club Noir, Gulshan", city: "dhaka", country: "Bangladesh", addressLabel: "Club Noir, Gulshan, Dhaka" },
+    isFree: false, minPrice: 600, maxPrice: 600, currency: "BDT",
+    totalCapacity: 300, totalSold: 210, totalReserved: 20, spotsLeft: 70,
+    isFeatured: false, isTrending: true, isVerified: true, isSponsored: false,
+    averageRating: 4.6, reviewCount: 87, trendScore: 91,
+    viewCount: 3100, likeCount: 241, bookmarkCount: 98,
+    coverImage: "https://images.unsplash.com/photo-1571266028243-d220c6a6db90?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1571266028243-d220c6a6db90?w=800&q=80"],
+    tags: [{ name: "Electronic" }, { name: "Club" }, { name: "Neon" }],
+    _trendLabel: "📈 Rising", _editorsPick: false, _newArrival: true,
+    _reason: "Based on your interests", _distance: "5.1 km",
+  },
+  {
+    _id: "3", slug: "rock-arena-2025",
+    title: "Rock Arena Bangladesh 2025",
+    shortDescription: "The biggest rock concert Bangladesh has ever seen.",
+    category: { slug: "music",   name: "Music"   },
+    subcategory: { slug: "concerts",   name: "Concerts"   },
+    eventType:   { slug: "live-bands", name: "Live Bands" },
+    organizer: { name: "Arena Live", isVerified: true },
+    startDate: new Date("2025-03-29T17:00:00+06:00"),
+    endDate:   new Date("2025-03-29T23:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "Bangabandhu National Stadium", city: "dhaka", country: "Bangladesh", addressLabel: "Bangabandhu National Stadium, Motijheel, Dhaka 1000" },
+    isFree: false, minPrice: 2500, maxPrice: 4500, currency: "BDT",
+    totalCapacity: 20000, totalSold: 14500, totalReserved: 500, spotsLeft: 5000,
+    isFeatured: true, isTrending: true, isVerified: true, isSponsored: true,
+    averageRating: 4.9, reviewCount: 312, trendScore: 99,
+    viewCount: 48000, likeCount: 3200, bookmarkCount: 1840,
+    coverImage: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80",
+      "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&q=80",
+      "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&q=80",
+    ],
+    tags: [{ name: "Rock" }, { name: "Stadium" }, { name: "Concert" }],
+    _trendLabel: "🔥 Selling Fast", _editorsPick: true, _newArrival: false,
+    _reason: "Top rated this month", _distance: "4.7 km",
+  },
+  {
+    _id: "4", slug: "solo-acoustic-night",
+    title: "Solo Acoustic Night",
+    shortDescription: "An intimate evening of solo acoustic performances.",
+    category: { slug: "music",   name: "Music"   },
+    subcategory: { slug: "concerts",      name: "Concerts"      },
+    eventType:   { slug: "solo-artists",  name: "Solo Artists"  },
+    organizer: { name: "Acoustic Studio BD", isVerified: false },
+    startDate: new Date("2025-03-20T20:00:00+06:00"),
+    endDate:   new Date("2025-03-20T23:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "The Alley, Dhanmondi", city: "dhaka", country: "Bangladesh", addressLabel: "The Alley, Dhanmondi, Dhaka" },
+    isFree: false, minPrice: 400, maxPrice: 400, currency: "BDT",
+    totalCapacity: 120, totalSold: 80, totalReserved: 10, spotsLeft: 30,
+    isFeatured: false, isTrending: false, isVerified: false, isSponsored: false,
+    averageRating: 4.5, reviewCount: 48, trendScore: 60,
+    viewCount: 1200, likeCount: 88, bookmarkCount: 42,
+    coverImage: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&q=80"],
+    tags: [{ name: "Acoustic" }, { name: "Solo" }, { name: "Intimate" }],
+    _trendLabel: "🆕 New", _editorsPick: false, _newArrival: true,
+    _reason: "New this week", _distance: "1.8 km",
+  },
+  {
+    _id: "5", slug: "open-mic-friday",
+    title: "Friday Open Mic Dhaka",
+    shortDescription: "Weekly open mic night — everyone welcome.",
+    category: { slug: "music",    name: "Music"    },
+    subcategory: { slug: "open-mic", name: "Open Mic" },
+    eventType:   { slug: "music",    name: "Music"    },
+    organizer: { name: "Stage Fright Events", isVerified: false },
+    startDate: new Date("2025-03-28T19:00:00+06:00"),
+    endDate:   new Date("2025-03-28T23:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "Café Uprising, Dhanmondi", city: "dhaka", country: "Bangladesh", addressLabel: "Café Uprising, Dhanmondi, Dhaka" },
+    isFree: true, minPrice: 0, maxPrice: 0, currency: "BDT",
+    totalCapacity: 150, totalSold: 95, totalReserved: 10, spotsLeft: 45,
+    isFeatured: false, isTrending: true, isVerified: false, isSponsored: false,
+    averageRating: 4.4, reviewCount: 62, trendScore: 72,
+    viewCount: 2100, likeCount: 164, bookmarkCount: 78,
+    coverImage: "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=800&q=80"],
+    tags: [{ name: "Open Mic" }, { name: "Free" }, { name: "Community" }],
+    _trendLabel: "🔥 Selling Fast", _editorsPick: false, _newArrival: false,
+    _reason: "Free events near you", _distance: "0.9 km",
+  },
+  {
+    _id: "6", slug: "live-bands-showdown",
+    title: "Live Bands Showdown 2025",
+    shortDescription: "Bangladesh's top bands compete for the crown.",
+    category: { slug: "music",   name: "Music"   },
+    subcategory: { slug: "concerts",   name: "Concerts"   },
+    eventType:   { slug: "live-bands", name: "Live Bands" },
+    organizer: { name: "BandHub BD", isVerified: true },
+    startDate: new Date("2025-04-05T18:00:00+06:00"),
+    endDate:   new Date("2025-04-05T23:30:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "Bashundhara City Arena", city: "dhaka", country: "Bangladesh", addressLabel: "Bashundhara City Arena, Panthapath, Dhaka" },
+    isFree: false, minPrice: 1500, maxPrice: 2500, currency: "BDT",
+    totalCapacity: 3000, totalSold: 2100, totalReserved: 200, spotsLeft: 700,
+    isFeatured: true, isTrending: true, isVerified: true, isSponsored: false,
+    averageRating: 4.8, reviewCount: 175, trendScore: 85,
+    viewCount: 8900, likeCount: 612, bookmarkCount: 285,
+    coverImage: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&q=80"],
+    tags: [{ name: "Live Bands" }, { name: "Rock" }, { name: "Competition" }],
+    _trendLabel: "📈 Rising", _editorsPick: true, _newArrival: false,
+    _reason: "Popular with rock fans", _distance: "8.2 km",
+  },
+  {
+    _id: "7", slug: "dhaka-music-weekend",
+    title: "Dhaka Music Weekend",
+    shortDescription: "Two days of outdoor music at Hatirjheel.",
+    category: { slug: "music",     name: "Music"     },
+    subcategory: { slug: "festivals",  name: "Festivals" },
+    eventType:   { slug: "multi-day",  name: "Multi-Day" },
+    organizer: { name: "SoundWave BD", isVerified: true },
+    startDate: new Date("2025-03-22T16:00:00+06:00"),
+    endDate:   new Date("2025-03-23T22:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "Hatirjheel Amphitheatre", city: "dhaka", country: "Bangladesh", addressLabel: "Hatirjheel Amphitheatre, Rampura, Dhaka" },
+    isFree: false, minPrice: 900, maxPrice: 1500, currency: "BDT",
+    totalCapacity: 900, totalSold: 720, totalReserved: 50, spotsLeft: 130,
+    isFeatured: true, isTrending: true, isVerified: true, isSponsored: false,
+    averageRating: 4.7, reviewCount: 98, trendScore: 98,
+    viewCount: 12000, likeCount: 920, bookmarkCount: 441,
+    coverImage: "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&q=80"],
+    tags: [{ name: "Music" }, { name: "Outdoor" }, { name: "Weekend" }],
+    _trendLabel: "🔥 Selling Fast", _editorsPick: false, _newArrival: false,
+    _reason: "Outdoor festival", _distance: "3.5 km",
+  },
+  // ── SPORTS ───────────────────────────────────────────────────────────────
+  {
+    _id: "11", slug: "bd-premier-league-final",
+    title: "BD Premier League Final",
+    shortDescription: "The most anticipated football match of the season.",
+    category: { slug: "sports",   name: "Sports"  },
+    subcategory: { slug: "football",      name: "Football"      },
+    eventType:   { slug: "league-matches",name: "League Matches" },
+    organizer: { name: "BFF", isVerified: true },
+    startDate: new Date("2025-03-14T19:00:00+06:00"),
+    endDate:   new Date("2025-03-14T22:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "Bangabandhu National Stadium", city: "dhaka", country: "Bangladesh", addressLabel: "Bangabandhu National Stadium, Motijheel, Dhaka" },
+    isFree: false, minPrice: 500, maxPrice: 2000, currency: "BDT",
+    totalCapacity: 20000, totalSold: 18000, totalReserved: 1000, spotsLeft: 1000,
+    isFeatured: true, isTrending: true, isVerified: true, isSponsored: true,
+    averageRating: 4.7, reviewCount: 203, trendScore: 97,
+    viewCount: 62000, likeCount: 4800, bookmarkCount: 2200,
+    coverImage: "https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=800&q=80"],
+    tags: [{ name: "Football" }, { name: "League" }, { name: "Final" }],
+    _trendLabel: "🔥 Selling Fast", _editorsPick: true, _newArrival: false,
+    _reason: "National event", _distance: "4.7 km",
+  },
+  {
+    _id: "12", slug: "dhaka-cricket-cup",
+    title: "Dhaka Premier Cricket Cup",
+    shortDescription: "T20 cricket at Sher-e-Bangla — don't miss it.",
+    category: { slug: "sports",  name: "Sports" },
+    subcategory: { slug: "cricket", name: "Cricket" },
+    eventType:   { slug: "t20",     name: "T20"     },
+    organizer: { name: "BCB", isVerified: true },
+    startDate: new Date("2025-03-30T15:00:00+06:00"),
+    endDate:   new Date("2025-03-30T21:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "Sher-e-Bangla National Cricket Stadium", city: "dhaka", country: "Bangladesh", addressLabel: "Mirpur, Dhaka" },
+    isFree: false, minPrice: 400, maxPrice: 1500, currency: "BDT",
+    totalCapacity: 26000, totalSold: 22000, totalReserved: 1000, spotsLeft: 3000,
+    isFeatured: true, isTrending: true, isVerified: true, isSponsored: true,
+    averageRating: 4.8, reviewCount: 189, trendScore: 96,
+    viewCount: 54000, likeCount: 4100, bookmarkCount: 1980,
+    coverImage: "https://images.unsplash.com/photo-1540747913346-19212a4c3ae2?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1540747913346-19212a4c3ae2?w=800&q=80"],
+    tags: [{ name: "Cricket" }, { name: "T20" }, { name: "Stadium" }],
+    _trendLabel: "🔥 Selling Fast", _editorsPick: true, _newArrival: false,
+    _reason: "Top rated event", _distance: "7.2 km",
+  },
+  // ── ARTS & CULTURE ───────────────────────────────────────────────────────
+  {
+    _id: "13", slug: "dhaka-theatre-gala",
+    title: "Dhaka Theatre Gala Night",
+    shortDescription: "A spectacular evening of theatre performances.",
+    category: { slug: "arts-culture", name: "Arts & Culture" },
+    subcategory: { slug: "theatre",  name: "Theatre" },
+    eventType:   { slug: "drama",    name: "Drama"   },
+    organizer: { name: "National Theatre BD", isVerified: true },
+    startDate: new Date("2025-03-22T19:30:00+06:00"),
+    endDate:   new Date("2025-03-22T23:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "National Theatre, Shahbag", city: "dhaka", country: "Bangladesh", addressLabel: "National Theatre, Shahbag, Dhaka" },
+    isFree: false, minPrice: 800, maxPrice: 2000, currency: "BDT",
+    totalCapacity: 500, totalSold: 380, totalReserved: 20, spotsLeft: 100,
+    isFeatured: true, isTrending: false, isVerified: true, isSponsored: false,
+    averageRating: 4.7, reviewCount: 91, trendScore: 78,
+    viewCount: 5800, likeCount: 421, bookmarkCount: 210,
+    coverImage: "https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&q=80"],
+    tags: [{ name: "Theatre" }, { name: "Drama" }, { name: "Culture" }],
+    _trendLabel: "📈 Rising", _editorsPick: true, _newArrival: false,
+    _reason: "Arts pick of the week", _distance: "3.2 km",
+  },
+  // ── FOOD & DRINK ─────────────────────────────────────────────────────────
+  {
+    _id: "15", slug: "dhaka-food-fest-2025",
+    title: "Dhaka Food Festival 2025",
+    shortDescription: "The city's biggest outdoor food & drink festival.",
+    category: { slug: "food-drink", name: "Food & Drink" },
+    subcategory: { slug: "pop-up",   name: "Pop-Up"   },
+    eventType:   { slug: "festival", name: "Festival" },
+    organizer: { name: "Food BD Network", isVerified: true },
+    startDate: new Date("2025-04-04T12:00:00+06:00"),
+    endDate:   new Date("2025-04-06T22:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "Hatirjheel, Dhaka", city: "dhaka", country: "Bangladesh", addressLabel: "Hatirjheel, Rampura, Dhaka" },
+    isFree: false, minPrice: 200, maxPrice: 200, currency: "BDT",
+    totalCapacity: 5000, totalSold: 3200, totalReserved: 300, spotsLeft: 1500,
+    isFeatured: true, isTrending: true, isVerified: true, isSponsored: false,
+    averageRating: 4.7, reviewCount: 145, trendScore: 93,
+    viewCount: 18000, likeCount: 1340, bookmarkCount: 621,
+    coverImage: "https://images.unsplash.com/photo-1555244162-803834f70033?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1555244162-803834f70033?w=800&q=80"],
+    tags: [{ name: "Food" }, { name: "Festival" }, { name: "Outdoor" }],
+    _trendLabel: "🔥 Selling Fast", _editorsPick: true, _newArrival: false,
+    _reason: "Most loved food event", _distance: "3.5 km",
+  },
+  // ── TECHNOLOGY ───────────────────────────────────────────────────────────
+  {
+    _id: "16", slug: "dhaka-hackathon-2025",
+    title: "Dhaka Hackathon 2025",
+    shortDescription: "48-hour hackathon — build, ship, win.",
+    category: { slug: "technology",  name: "Technology" },
+    subcategory: { slug: "hackathons",  name: "Hackathons"  },
+    eventType:   { slug: "competition", name: "Competition" },
+    organizer: { name: "Tech BD Collective", isVerified: true },
+    startDate: new Date("2025-04-05T09:00:00+06:00"),
+    endDate:   new Date("2025-04-07T18:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "BRAC University, Mohakhali", city: "dhaka", country: "Bangladesh", addressLabel: "BRAC University, Mohakhali, Dhaka" },
+    isFree: true, minPrice: 0, maxPrice: 0, currency: "BDT",
+    totalCapacity: 800, totalSold: 540, totalReserved: 60, spotsLeft: 200,
+    isFeatured: true, isTrending: true, isVerified: true, isSponsored: false,
+    averageRating: 4.8, reviewCount: 112, trendScore: 89,
+    viewCount: 9200, likeCount: 710, bookmarkCount: 328,
+    coverImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80"],
+    tags: [{ name: "Hackathon" }, { name: "Tech" }, { name: "Free" }],
+    _trendLabel: "📈 Rising", _editorsPick: false, _newArrival: false,
+    _reason: "Developer community pick", _distance: "9.1 km",
+  },
+  {
+    _id: "17", slug: "ai-summit-dhaka",
+    title: "AI & ML Summit Dhaka 2025",
+    shortDescription: "World-class AI practitioners, hands-on workshops.",
+    category: { slug: "technology", name: "Technology" },
+    subcategory: { slug: "ai-ml",      name: "AI & ML"    },
+    eventType:   { slug: "conference", name: "Conference" },
+    organizer: { name: "DataBD", isVerified: true },
+    startDate: new Date("2025-04-11T09:00:00+06:00"),
+    endDate:   new Date("2025-04-12T18:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "Pan Pacific Hotel, Kawran Bazar", city: "dhaka", country: "Bangladesh", addressLabel: "Pan Pacific Hotel, Kawran Bazar, Dhaka" },
+    isFree: false, minPrice: 2000, maxPrice: 5000, currency: "BDT",
+    totalCapacity: 800, totalSold: 620, totalReserved: 80, spotsLeft: 100,
+    isFeatured: true, isTrending: true, isVerified: true, isSponsored: true,
+    averageRating: 4.9, reviewCount: 88, trendScore: 94,
+    viewCount: 14000, likeCount: 1120, bookmarkCount: 520,
+    coverImage: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&q=80"],
+    tags: [{ name: "AI" }, { name: "ML" }, { name: "Conference" }],
+    _trendLabel: "🔥 Selling Fast", _editorsPick: true, _newArrival: false,
+    _reason: "Fastest growing event", _distance: "6.5 km",
+  },
+  // ── HEALTH ────────────────────────────────────────────────────────────────
+  {
+    _id: "18", slug: "morning-yoga-dhaka",
+    title: "Morning Yoga in the Park",
+    shortDescription: "Guided outdoor yoga session at Ramna Park.",
+    category: { slug: "health",  name: "Health & Wellness" },
+    subcategory: { slug: "yoga",   name: "Yoga"   },
+    eventType:   { slug: "class",  name: "Class"  },
+    organizer: { name: "Dhaka Yoga Studio", isVerified: false },
+    startDate: new Date("2025-03-16T07:00:00+06:00"),
+    endDate:   new Date("2025-03-16T09:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "Ramna Park, Dhaka", city: "dhaka", country: "Bangladesh", addressLabel: "Ramna Park, Ramna, Dhaka" },
+    isFree: false, minPrice: 150, maxPrice: 150, currency: "BDT",
+    totalCapacity: 60, totalSold: 45, totalReserved: 5, spotsLeft: 10,
+    isFeatured: false, isTrending: false, isVerified: false, isSponsored: false,
+    averageRating: 4.5, reviewCount: 43, trendScore: 58,
+    viewCount: 1800, likeCount: 142, bookmarkCount: 68,
+    coverImage: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80"],
+    tags: [{ name: "Yoga" }, { name: "Outdoor" }, { name: "Morning" }],
+    _trendLabel: "🆕 New", _editorsPick: false, _newArrival: true,
+    _reason: "Near your location", _distance: "0.6 km",
+  },
+  // ── BUSINESS ─────────────────────────────────────────────────────────────
+  {
+    _id: "19", slug: "startup-summit-dhaka",
+    title: "Bangladesh Startup Summit 2025",
+    shortDescription: "Connect with investors, mentors and fellow founders.",
+    category: { slug: "business",    name: "Business"    },
+    subcategory: { slug: "conferences", name: "Conferences" },
+    eventType:   { slug: "summit",      name: "Summit"      },
+    organizer: { name: "Startup BD", isVerified: true },
+    startDate: new Date("2025-04-03T09:00:00+06:00"),
+    endDate:   new Date("2025-04-04T18:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "Radisson Blu Hotel, Dhaka", city: "dhaka", country: "Bangladesh", addressLabel: "Radisson Blu Hotel, Dhaka" },
+    isFree: false, minPrice: 3000, maxPrice: 8000, currency: "BDT",
+    totalCapacity: 1000, totalSold: 750, totalReserved: 100, spotsLeft: 150,
+    isFeatured: true, isTrending: false, isVerified: true, isSponsored: true,
+    averageRating: 4.8, reviewCount: 97, trendScore: 87,
+    viewCount: 11000, likeCount: 840, bookmarkCount: 391,
+    coverImage: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80"],
+    tags: [{ name: "Startup" }, { name: "Business" }, { name: "Networking" }],
+    _trendLabel: "📈 Rising", _editorsPick: true, _newArrival: false,
+    _reason: "Business community pick", _distance: "7.8 km",
+  },
+  // ── OTHER CITIES ──────────────────────────────────────────────────────────
+  {
+    _id: "20", slug: "chittagong-rock-fest",
+    title: "Chittagong Rock Fest 2025",
+    shortDescription: "Chittagong's biggest outdoor rock festival.",
+    category: { slug: "music",    name: "Music"    },
+    subcategory: { slug: "festivals", name: "Festivals" },
+    eventType:   { slug: "outdoor",   name: "Outdoor"   },
+    organizer: { name: "CTG Music Society", isVerified: true },
+    startDate: new Date("2025-04-19T17:00:00+06:00"),
+    endDate:   new Date("2025-04-19T23:30:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "MA Aziz Stadium", city: "chittagong", country: "Bangladesh", addressLabel: "MA Aziz Stadium, Chittagong" },
+    isFree: false, minPrice: 1000, maxPrice: 2500, currency: "BDT",
+    totalCapacity: 6000, totalSold: 4200, totalReserved: 300, spotsLeft: 1500,
+    isFeatured: true, isTrending: true, isVerified: true, isSponsored: false,
+    averageRating: 4.9, reviewCount: 201, trendScore: 95,
+    viewCount: 21000, likeCount: 1640, bookmarkCount: 750,
+    coverImage: "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80"],
+    tags: [{ name: "Rock" }, { name: "Festival" }, { name: "Chittagong" }],
+    _trendLabel: "🔥 Selling Fast", _editorsPick: true, _newArrival: false,
+    _reason: "Top in Chittagong", _distance: "2.1 km",
+  },
+  {
+    _id: "22", slug: "london-bd-music-night",
+    title: "Bangladesh Night London",
+    shortDescription: "Celebrating Bangladesh through music and culture.",
+    category: { slug: "music",   name: "Music"   },
+    subcategory: { slug: "concerts",  name: "Concerts"  },
+    eventType:   { slug: "cultural",  name: "Cultural"  },
+    organizer: { name: "BD Cultural UK", isVerified: true },
+    startDate: new Date("2025-04-26T19:00:00+06:00"),
+    endDate:   new Date("2025-04-26T23:00:00+06:00"),
+    timezone:  "Europe/London",
+    location: { type: "physical", name: "Troxy Theatre, London", city: "london", country: "UK", addressLabel: "Troxy Theatre, Commercial Road, London E1 0HX" },
+    isFree: false, minPrice: 1800, maxPrice: 3500, currency: "BDT",
+    totalCapacity: 1000, totalSold: 820, totalReserved: 50, spotsLeft: 130,
+    isFeatured: true, isTrending: false, isVerified: true, isSponsored: false,
+    averageRating: 4.8, reviewCount: 142, trendScore: 88,
+    viewCount: 9800, likeCount: 760, bookmarkCount: 350,
+    coverImage: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80"],
+    tags: [{ name: "Cultural" }, { name: "Bangladesh" }, { name: "London" }],
+    _trendLabel: "📈 Rising", _editorsPick: true, _newArrival: false,
+    _reason: "Popular in London", _distance: "3.4 km",
+  },
+  // ── EDUCATION ─────────────────────────────────────────────────────────────
+  {
+    _id: "24", slug: "web-dev-bootcamp-dhaka",
+    title: "Full-Stack Web Dev Bootcamp",
+    shortDescription: "12-week intensive full-stack web development training.",
+    category: { slug: "education",  name: "Education"   },
+    subcategory: { slug: "boot-camps", name: "Boot Camps" },
+    eventType:   { slug: "workshop",   name: "Workshop"   },
+    organizer: { name: "Code Academy BD", isVerified: true },
+    startDate: new Date("2025-04-05T09:00:00+06:00"),
+    endDate:   new Date("2025-04-05T18:00:00+06:00"),
+    timezone:  "Asia/Dhaka",
+    location: { type: "physical", name: "Creative IT, Dhanmondi", city: "dhaka", country: "Bangladesh", addressLabel: "Creative IT Institute, Dhanmondi, Dhaka" },
+    isFree: false, minPrice: 1500, maxPrice: 1500, currency: "BDT",
+    totalCapacity: 40, totalSold: 28, totalReserved: 5, spotsLeft: 7,
+    isFeatured: false, isTrending: false, isVerified: true, isSponsored: false,
+    averageRating: 4.8, reviewCount: 76, trendScore: 80,
+    viewCount: 4200, likeCount: 341, bookmarkCount: 165,
+    coverImage: "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=800&q=80",
+    images: ["https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=800&q=80"],
+    tags: [{ name: "Coding" }, { name: "Web Dev" }, { name: "Workshop" }],
+    _trendLabel: "🆕 New", _editorsPick: false, _newArrival: true,
+    _reason: "Limited seats", _distance: "1.1 km",
+  },
 ];
 
-/* ═══════════════════════════════════════════════════════════════
-   FILTER FACETS (mock counts for FiltersSection)
-   In production: GET /api/events/facets?category=music&location=dhaka
-═══════════════════════════════════════════════════════════════ */
+// ── Filter facets (mirrors backend aggregation output) ──────────────────────
+// Production: GET /api/events/facets?category=music&location.city=dhaka
 export const FILTER_FACETS = {
   date:   { today: 23, tomorrow: 11, "this-week": 73, "this-weekend": 38, "this-month": 142, "next-month": 89 },
   price:  { free: 56, "under-500": 134, "500-1000": 98, "1000-2500": 61, "2500-plus": 27 },
@@ -141,33 +559,29 @@ export const FILTER_FACETS = {
   time:   { morning: 34, afternoon: 67, evening: 112, night: 63 },
 };
 
-/* ═══════════════════════════════════════════════════════════════
-   REVIEWS POOL
-   In production: GET /api/reviews?category=music&location=dhaka&limit=6
-═══════════════════════════════════════════════════════════════ */
+// ── Reviews pool ────────────────────────────────────────────────────────────
+// Production: GET /api/reviews?location.city=dhaka&limit=6
 export const REVIEWS_POOL = [
-  { id: 1, eventId: 3, eventTitle: "Rock Arena Bangladesh 2025",  category: "music", city: "dhaka", reviewer: "Rafiq Islam",    avatar: "RI", rating: 5, date: "2025-03-03T10:00:00Z", text: "Absolutely incredible energy! Rock Arena was everything I hoped for — the sound was massive, the lineup was legendary, and the crowd was electric. Best night of the year so far.",         helpful: 42, eventSlug: "rock-arena-2025" },
-  { id: 2, eventId: 7, eventTitle: "Dhaka Music Weekend",         category: "music", city: "dhaka", reviewer: "Priya Chowdhury",avatar: "PC", rating: 5, date: "2025-02-25T15:30:00Z", text: "Dhaka Music Weekend delivered on every front. The outdoor setting at Hatirjheel was stunning, the curation was thoughtful, and the vibe was just perfect. Already looking forward to next year!", helpful: 38, eventSlug: "dhaka-music-weekend" },
-  { id: 3, eventId: 1, eventTitle: "Dhaka Jazz Festival 2025",    category: "music", city: "dhaka", reviewer: "Tanvir Ahmed",    avatar: "TA", rating: 4, date: "2025-02-18T09:15:00Z", text: "The Jazz Festival was a beautiful, intimate experience. Musicians from across the country showed up and delivered stunning sets. The venue at ICCB was perfect for the mood.",                helpful: 27, eventSlug: "dhaka-jazz-festival-2025" },
-  { id: 4, eventId: 11, eventTitle: "BD Premier League Final",    category: "sports", city: "dhaka", reviewer: "Karim Hossain",  avatar: "KH", rating: 5, date: "2025-03-01T20:00:00Z", text: "The atmosphere at Bangabandhu Stadium was unreal. Thousands of fans, incredible play, a last-minute winner — this is why we love football! Tickets sold out fast, get yours early!",         helpful: 61, eventSlug: "bd-premier-league-final" },
-  { id: 5, eventId: 13, eventTitle: "Dhaka Theatre Gala Night",   category: "arts-culture", city: "dhaka", reviewer: "Nasrin Begum", avatar: "NB", rating: 5, date: "2025-02-20T11:45:00Z", text: "The Theatre Gala was a genuinely moving experience — superb acting, beautiful staging, and a story that stayed with me for days. Theatre like this is a reminder of why live art matters.", helpful: 33, eventSlug: "dhaka-theatre-gala" },
-  { id: 6, eventId: 17, eventTitle: "AI & ML Summit Dhaka 2025",  category: "technology", city: "dhaka", reviewer: "Sadia Islam",  avatar: "SI", rating: 5, date: "2025-03-05T14:20:00Z", text: "The AI Summit was world-class. The speakers were practitioners at the cutting edge, the workshops were hands-on, and the networking opportunities were invaluable. A must for tech professionals.", helpful: 55, eventSlug: "ai-summit-dhaka" },
+  { id: "r1", eventId: "3",  eventTitle: "Rock Arena Bangladesh 2025",  city: "dhaka",   reviewer: "Rafiq Islam",     avatar: "RI", averageRating: 5, date: "2025-03-03T10:00:00Z", text: "Absolutely incredible energy! Rock Arena was everything I hoped for — the sound was massive, the lineup legendary, and the crowd electric. Best night of the year so far.", helpful: 42, eventSlug: "rock-arena-2025" },
+  { id: "r2", eventId: "7",  eventTitle: "Dhaka Music Weekend",         city: "dhaka",   reviewer: "Priya Chowdhury", avatar: "PC", averageRating: 5, date: "2025-02-25T15:30:00Z", text: "Dhaka Music Weekend delivered on every front. The outdoor setting was stunning, curation was thoughtful, and the vibe was perfect. Already looking forward to next year!", helpful: 38, eventSlug: "dhaka-music-weekend" },
+  { id: "r3", eventId: "1",  eventTitle: "Dhaka Jazz Festival 2025",    city: "dhaka",   reviewer: "Tanvir Ahmed",    avatar: "TA", averageRating: 4, date: "2025-02-18T09:15:00Z", text: "The Jazz Festival was a beautiful, intimate experience. Musicians from across Bangladesh showed up and delivered stunning sets. Perfect venue and mood.", helpful: 27, eventSlug: "dhaka-jazz-festival-2025" },
+  { id: "r4", eventId: "11", eventTitle: "BD Premier League Final",     city: "dhaka",   reviewer: "Karim Hossain",   avatar: "KH", averageRating: 5, date: "2025-03-01T20:00:00Z", text: "The atmosphere was unreal. Thousands of fans, incredible play, a last-minute winner — this is why we love football! Get your tickets early.", helpful: 61, eventSlug: "bd-premier-league-final" },
+  { id: "r5", eventId: "13", eventTitle: "Dhaka Theatre Gala Night",    city: "dhaka",   reviewer: "Nasrin Begum",    avatar: "NB", averageRating: 5, date: "2025-02-20T11:45:00Z", text: "The Theatre Gala was a genuinely moving experience — superb acting, beautiful staging, and a story that stayed with me for days. Live art at its finest.", helpful: 33, eventSlug: "dhaka-theatre-gala" },
+  { id: "r6", eventId: "17", eventTitle: "AI & ML Summit Dhaka 2025",   city: "dhaka",   reviewer: "Sadia Islam",     avatar: "SI", averageRating: 5, date: "2025-03-05T14:20:00Z", text: "World-class speakers, hands-on workshops, invaluable networking. The AI Summit was a must for any tech professional. Will definitely be back next year.", helpful: 55, eventSlug: "ai-summit-dhaka" },
 ];
 
-/* ═══════════════════════════════════════════════════════════════
-   PLATFORM STATS
-   In production: GET /api/stats?category=music&location=dhaka
-═══════════════════════════════════════════════════════════════ */
+// ── Platform stats ──────────────────────────────────────────────────────────
+// Production: GET /api/stats?category=music&location.city=dhaka
 export const PLATFORM_STATS = {
-  root:        { events: 5442, organizers: 312, cities: 60, ticketsSold: 48200, avgRating: 4.7 },
-  music:       { events: 1284, organizers: 98,  cities: 48, ticketsSold: 18400, avgRating: 4.8 },
-  sports:      { events: 894,  organizers: 54,  cities: 32, ticketsSold: 12100, avgRating: 4.7 },
-  "arts-culture": { events: 642, organizers: 67, cities: 27, ticketsSold: 6800, avgRating: 4.6 },
-  "food-drink":   { events: 431, organizers: 41, cities: 19, ticketsSold: 5200, avgRating: 4.7 },
-  business:    { events: 318,  organizers: 38,  cities: 22, ticketsSold: 4400, avgRating: 4.6 },
-  education:   { events: 276,  organizers: 29,  cities: 18, ticketsSold: 3800, avgRating: 4.7 },
-  health:      { events: 509,  organizers: 45,  cities: 30, ticketsSold: 7100, avgRating: 4.5 },
-  technology:  { events: 387,  organizers: 43,  cities: 24, ticketsSold: 5900, avgRating: 4.8 },
-  "kids-family":  { events: 223, organizers: 24, cities: 15, ticketsSold: 3100, avgRating: 4.6 },
-  community:   { events: 194,  organizers: 31,  cities: 21, ticketsSold: 2900, avgRating: 4.5 },
+  root:           { events: 5442, organizers: 312, cities: 60, ticketsSold: 48200, avgRating: 4.7 },
+  music:          { events: 1284, organizers: 98,  cities: 48, ticketsSold: 18400, avgRating: 4.8 },
+  sports:         { events: 894,  organizers: 54,  cities: 32, ticketsSold: 12100, avgRating: 4.7 },
+  "arts-culture": { events: 642,  organizers: 67,  cities: 27, ticketsSold: 6800,  avgRating: 4.6 },
+  "food-drink":   { events: 431,  organizers: 41,  cities: 19, ticketsSold: 5200,  avgRating: 4.7 },
+  business:       { events: 318,  organizers: 38,  cities: 22, ticketsSold: 4400,  avgRating: 4.6 },
+  education:      { events: 276,  organizers: 29,  cities: 18, ticketsSold: 3800,  avgRating: 4.7 },
+  health:         { events: 509,  organizers: 45,  cities: 30, ticketsSold: 7100,  avgRating: 4.5 },
+  technology:     { events: 387,  organizers: 43,  cities: 24, ticketsSold: 5900,  avgRating: 4.8 },
+  "kids-family":  { events: 223,  organizers: 24,  cities: 15, ticketsSold: 3100,  avgRating: 4.6 },
+  community:      { events: 194,  organizers: 31,  cities: 21, ticketsSold: 2900,  avgRating: 4.5 },
 };

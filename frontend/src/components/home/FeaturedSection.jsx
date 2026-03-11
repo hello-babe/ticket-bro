@@ -1,9 +1,2 @@
-import React from 'react'
-
-const FeaturedSection = () => {
-  return (
-    <div>FeaturedSection</div>
-  )
-}
-
-export default FeaturedSection
+// Re-export browse FeaturedSection for use on the home page
+export { default } from "@/components/browse/sections/FeaturedSection";

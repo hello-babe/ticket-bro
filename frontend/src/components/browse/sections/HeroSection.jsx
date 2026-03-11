@@ -5,7 +5,7 @@ import { Search, MapPin, Calendar, Tag, Layers, ChevronDown, Check, Locate, X } 
 import Container from "@/components/layout/Container";
 import Breadcrumb from "@/components/shared/Breadcrumb";
 import { useLocation as useLocationCtx, LOCATIONS } from "@/context/LocationContext";
-import { useBrowse, unslugify } from "@/hooks/useBrowse";
+import { useBrowse, unslugify } from "@/hooks";
 import { CATEGORY_MAP } from "@/data/browseData";
 
 const InlineLocationPicker = ({ selectedLocation, onLocationChange }) => {

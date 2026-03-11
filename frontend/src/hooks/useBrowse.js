@@ -1,33 +1,18 @@
 /**
- * useBrowse.js — Central hook for all browse pages.
+ * useBrowse.js
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Central hook for all browse pages.
+ * Field access EXACTLY matches event.model.js (via normaliseEvent()).
  *
- * Provides:
- *   - Parsed route params (level, slugs)
- *   - Category config from CATEGORY_MAP
- *   - Location from LocationContext
- *   - Filtered event sets (all, featured, trending, nearby, etc.)
- *   - Event count helpers
+ * - Reads useParams() (categorySlug, subCategorySlug, eventTypeSlug)
+ * - Reads LocationContext (selectedLocation)
+ * - Returns typed getters that filter/sort EVENTS_POOL by city + route level
  *
- * Usage:
- *   const browse = useBrowse();
- *   browse.level          // "root" | "category" | "subCategory" | "eventType"
- *   browse.config         // CATEGORY_MAP entry for current category (or ALL_EVENTS_CONFIG)
- *   browse.locationLabel  // "Dhaka"
- *   browse.getEvents()    // all filtered events for current route + location
- *   browse.getFeatured()  // featured events
- *   browse.getTrending()  // sorted by trendScore
- *   browse.getTopRated()  // sorted by rating
- *   browse.getNewArrivals()
- *   browse.getNearby()
- *   browse.getEditorsPicks()
- *   browse.getRecommended()
- *   browse.getUpcoming()  // next 7 days
- *   browse.getReviews()
- *   browse.getStats()
- *   browse.totalCount
- *   browse.buildEventUrl(event) → route string
+ * Production swap:
+ *   Replace EVENTS_POOL references with useSelector(selectEvents) + dispatch(loadEvents(params))
+ *   using useEvents() hook. All section components remain unchanged.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
-
 import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useLocation as useLocationCtx } from "@/context/LocationContext";
@@ -37,131 +22,190 @@ import {
   ALL_EVENTS_CONFIG,
   REVIEWS_POOL,
   PLATFORM_STATS,
+  FILTER_FACETS,
 } from "@/data/browseData";
+import { ROUTES } from "@/app/AppRoutes";
 
-/* ─── pure helpers ─────────────────────────────────────────────── */
-export const unslugify = (slug = "") =>
-  slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-
-export const toSlug = (str = "") =>
-  str.toLowerCase().replace(/[&\s]+/g, "-");
-
-export const spotsPercent = (attendees, capacity) =>
-  Math.min(100, Math.round((attendees / capacity) * 100));
-
-export const formatAttendees = (n) =>
-  n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
-
-export const getLevel = (categorySlug, subCategorySlug, eventTypeSlug) => {
-  if (eventTypeSlug) return "eventType";
+// ── Route level detection ─────────────────────────────────────────────────
+export const getLevel = ({ categorySlug, subCategorySlug, eventTypeSlug } = {}) => {
+  if (eventTypeSlug)   return "eventType";
   if (subCategorySlug) return "subCategory";
-  if (categorySlug) return "category";
+  if (categorySlug)    return "category";
   return "root";
 };
 
-/* ─── core filter ─────────────────────────────────────────────── */
-const filterByRoute = (events, level, categorySlug, subCategorySlug, eventTypeSlug) => {
-  if (level === "category")    return events.filter((e) => e.category === categorySlug);
-  if (level === "subCategory") return events.filter((e) => e.category === categorySlug && e.subCategory === toSlug(subCategorySlug));
-  if (level === "eventType")   return events.filter((e) => e.category === categorySlug && e.subCategory === toSlug(subCategorySlug) && e.eventType === toSlug(eventTypeSlug));
-  return events; // root — all
+// ── URL slug helpers ──────────────────────────────────────────────────────
+export const unslugify = (slug = "") =>
+  slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+export const toSlug = (str = "") =>
+  str.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-");
+
+// ── Capacity helpers (mirrors virtual fields) ─────────────────────────────
+export const spotsPercent = (event) => {
+  if (!event?.totalCapacity) return 0;
+  return Math.round(((event.totalSold || 0) / event.totalCapacity) * 100);
 };
 
-const filterByLocation = (events, locationId) => {
-  if (!locationId || locationId === "current") return events;
-  return events.filter((e) => e.city === locationId);
+export const formatAttendees = (n) => {
+  if (!n && n !== 0) return "–";
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return String(n);
 };
 
-/* ═══════════════════════════════════════════════════════════════
-   useBrowse HOOK
-═══════════════════════════════════════════════════════════════ */
-export const useBrowse = () => {
-  const { categorySlug, subCategorySlug, eventTypeSlug } = useParams();
-  const { selectedLocation, changeLocation, locations } = useLocationCtx();
+// ── Main hook ─────────────────────────────────────────────────────────────
+const useBrowse = () => {
+  const params = useParams();
+  const { categorySlug, subCategorySlug, eventTypeSlug } = params;
+  const { selectedLocation } = useLocationCtx();
 
-  const level         = getLevel(categorySlug, subCategorySlug, eventTypeSlug);
-  const config        = CATEGORY_MAP[categorySlug] ?? ALL_EVENTS_CONFIG;
-  const locationId    = selectedLocation?.id;
-  const locationLabel = selectedLocation?.label ?? "your city";
-  const locationFlag  = selectedLocation?.flag  ?? "📍";
+  const cityId = selectedLocation?.id;    // e.g. "dhaka"
+  const cityLabel = selectedLocation?.label || selectedLocation?.name || "Your City";
+  const locationFlag = selectedLocation?.flag || "📍";
 
-  /* base pool filtered by route + location */
-  const basePool = useMemo(
-    () => filterByLocation(
-            filterByRoute(EVENTS_POOL, level, categorySlug, subCategorySlug, eventTypeSlug),
-            locationId
-          ),
-    [level, categorySlug, subCategorySlug, eventTypeSlug, locationId]
-  );
+  const level  = getLevel({ categorySlug, subCategorySlug, eventTypeSlug });
+  const config = categorySlug
+    ? (CATEGORY_MAP[categorySlug] || ALL_EVENTS_CONFIG)
+    : ALL_EVENTS_CONFIG;
 
-  /* stats scoped to category + location */
-  const stats = useMemo(() => {
-    const base = PLATFORM_STATS[categorySlug] ?? PLATFORM_STATS.root;
-    // If we have real events for this location, use actual counts; else scale down mock
-    const locationRatio = locationId && locationId !== "current" ? 0.4 : 1;
-    return {
-      events:      Math.round(base.events * locationRatio),
-      organizers:  Math.round(base.organizers * locationRatio),
-      cities:      base.cities,
-      ticketsSold: Math.round(base.ticketsSold * locationRatio),
-      avgRating:   base.avgRating,
-    };
-  }, [categorySlug, locationId]);
+  // ── Base filter: city + taxonomy slug matching ─────────────────────────
+  const baseEvents = useMemo(() => {
+    return EVENTS_POOL.filter((e) => {
+      // city filter — maps to event.model.js  location.city
+      if (cityId && cityId !== "current" && e.location?.city && e.location.city !== cityId) {
+        return false;
+      }
+      // taxonomy filter — matches category.slug, subcategory.slug, eventType.slug
+      if (categorySlug    && e.category?.slug    !== categorySlug)    return false;
+      if (subCategorySlug && e.subcategory?.slug !== subCategorySlug) return false;
+      if (eventTypeSlug   && e.eventType?.slug   !== eventTypeSlug)   return false;
+      return true;
+    });
+  }, [cityId, categorySlug, subCategorySlug, eventTypeSlug]);
 
-  /* derived event sets */
-  const getEvents      = ()         => basePool;
-  const getFeatured    = ()         => basePool.filter((e) => e.featured).slice(0, 6);
-  const getTrending    = ()         => [...basePool].sort((a, b) => b.trendScore - a.trendScore).slice(0, 8);
-  const getTopRated    = ()         => [...basePool].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount).slice(0, 8);
-  const getNewArrivals = ()         => basePool.filter((e) => e.newArrival).slice(0, 8);
-  const getNearby      = ()         => [...basePool].sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance)).slice(0, 8);
-  const getEditorsPicks= ()         => basePool.filter((e) => e.editorsPick).slice(0, 6);
-  const getRecommended = ()         => [...basePool].sort(() => Math.random() - 0.5).slice(0, 6);
-  const getUpcoming    = (days = 7) => basePool.slice(0, 8); // in prod: filter by date range
-  const getReviews     = ()         => REVIEWS_POOL.filter((r) => !locationId || r.city === locationId).slice(0, 6);
-  const getStats       = ()         => stats;
+  // ── Named getters (each maps to an event.model.js static/query) ───────
 
-  /* URL builder — uses flat route scheme: /:cat/:sub/:type/:slug */
-  const buildEventUrl = (event) =>
-    `/${event.category}/${event.subCategory}/${event.eventType}/${event.slug}`;
+  /** All events matching current scope — maps to Event.published() */
+  const getEvents         = () => baseEvents;
 
-  const buildCategoryUrl    = (cat)           => `/${cat}`;
-  const buildSubCategoryUrl = (cat, sub)      => `/${cat}/${toSlug(sub)}`;
-  const buildEventTypeUrl   = (cat, sub, type)=> `/${cat}/${toSlug(sub)}/${toSlug(type)}`;
+  /** isFeatured=true — maps to Event.published().where({isFeatured:true}) */
+  const getFeatured       = () => baseEvents.filter((e) => e.isFeatured).slice(0, 6);
 
-  /* dynamic hero description */
+  /** Sort by trendScore desc — maps to Event.trending() */
+  const getTrending       = () => [...baseEvents].sort((a, b) => (b.trendScore || 0) - (a.trendScore || 0)).slice(0, 8);
+
+  /** Sort by averageRating desc — maps to Event.published().sort({averageRating:-1}) */
+  const getTopRated       = () => [...baseEvents].sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0)).slice(0, 8);
+
+  /** Events created recently — maps to Event.published().sort({createdAt:-1}) */
+  const getNewArrivals    = () => baseEvents.filter((e) => e._newArrival).slice(0, 8);
+
+  /** Events with location.latLng populated — maps to Event.nearLocation() */
+  const getNearby         = () => baseEvents.filter((e) => e._distance).slice(0, 8);
+
+  /** _editorsPick flag (UI-only, no model field; production: curated list) */
+  const getEditorsPicks   = () => baseEvents.filter((e) => e._editorsPick).slice(0, 6);
+
+  /** _reason flag (UI-only; production: recommendation engine) */
+  const getRecommended    = () => baseEvents.filter((e) => e._reason).slice(0, 6);
+
+  /** isUpcoming = startDate > now — maps to Event.upcoming() */
+  const getUpcoming       = () => {
+    const now = new Date();
+    return [...baseEvents]
+      .filter((e) => e.startDate && e.startDate > now)
+      .sort((a, b) => a.startDate - b.startDate)
+      .slice(0, 8);
+  };
+
+  /** Reviews — maps to GET /api/reviews?location.city=dhaka */
+  const getReviews        = () => {
+    if (!cityId || cityId === "current") return REVIEWS_POOL.slice(0, 6);
+    return REVIEWS_POOL.filter((r) => r.city === cityId).slice(0, 6);
+  };
+
+  /** Platform stats — maps to GET /api/stats?category=music */
+  const getStats          = () => PLATFORM_STATS[categorySlug] || PLATFORM_STATS.root;
+
+  /** Filter facets — maps to GET /api/events/facets */
+  const getFacets         = () => FILTER_FACETS;
+
+  // ── URL builders ──────────────────────────────────────────────────────
+
+  const buildEventUrl = (event) => {
+    // Use populated taxonomy slugs when available
+    const cat  = event.category?.slug    || categorySlug    || "events";
+    const sub  = event.subcategory?.slug || subCategorySlug || cat;
+    const type = event.eventType?.slug   || eventTypeSlug   || sub;
+    return ROUTES.BROWSE.EVENT(cat, sub, type, event.slug);
+  };
+
+  const buildCategoryUrl = (cat) =>
+    ROUTES.BROWSE.CATEGORY(cat);
+
+  const buildSubCategoryUrl = (cat, sub) =>
+    ROUTES.BROWSE.SUBCATEGORY(cat, sub);
+
+  const buildEventTypeUrl = (cat, sub, type) =>
+    ROUTES.BROWSE.EVENT_TYPE(cat, sub, type);
+
+  // ── Total count for current scope ─────────────────────────────────────
+  const totalCount = useMemo(() => baseEvents.length || config.totalEvents || 0, [baseEvents, config]);
+
+  // ── Hero description ──────────────────────────────────────────────────
   const getHeroDescription = () => {
-    if (level === "root")
-      return `Discover thousands of events happening in ${locationLabel} and beyond.`;
-    if (level === "category")
-      return `${config.description} Events near ${locationLabel}.`;
-    if (level === "subCategory")
-      return `Explore all ${unslugify(subCategorySlug)} events in ${locationLabel}.`;
-    return `All ${unslugify(eventTypeSlug)} events in ${unslugify(subCategorySlug)}, ${locationLabel}.`;
+    if (level === "root")       return `Discover ${totalCount.toLocaleString()}+ events happening in ${cityLabel} and beyond. From music to sports, arts to food — find what excites you.`;
+    if (level === "category")   return config.description || `Explore the best ${config.label} events in ${cityLabel}.`;
+    if (level === "subCategory") return `Browse ${unslugify(subCategorySlug)} events under ${config.label} in ${cityLabel}.`;
+    return `Explore ${unslugify(eventTypeSlug)} — a type of ${unslugify(subCategorySlug)} event in ${config.label}.`;
   };
 
   return {
-    // route
-    level, categorySlug, subCategorySlug, eventTypeSlug,
-    // category
+    // context
+    level,
     config,
-    categoryLabel: config.label,
-    subcategories: config.subcategories,
-    // location
-    selectedLocation, changeLocation, locations,
-    locationId, locationLabel, locationFlag,
-    // event helpers
-    totalCount: basePool.length,
-    getEvents, getFeatured, getTrending, getTopRated,
-    getNewArrivals, getNearby, getEditorsPicks,
-    getRecommended, getUpcoming, getReviews, getStats,
-    // url builders
-    buildEventUrl, buildCategoryUrl, buildSubCategoryUrl, buildEventTypeUrl,
-    // content
+    categorySlug,
+    subCategorySlug,
+    eventTypeSlug,
+    cityId,
+    cityLabel,
+    locationLabel: cityLabel,
+    locationFlag,
+    totalCount,
     getHeroDescription,
-    // raw
+    isRoot:        level === "root",
+    isCategory:    level === "category",
+    isSubCategory: level === "subCategory",
+    isEventType:   level === "eventType",
+
+    // data getters (replace with API calls in production)
+    getEvents,
+    getFeatured,
+    getTrending,
+    getTopRated,
+    getNewArrivals,
+    getNearby,
+    getEditorsPicks,
+    getRecommended,
+    getUpcoming,
+    getReviews,
+    getStats,
+    getFacets,
+
+    // URL builders
+    buildEventUrl,
+    buildCategoryUrl,
+    buildSubCategoryUrl,
+    buildEventTypeUrl,
+
+    // pure helpers (exported for direct import too)
+    unslugify,
+    toSlug,
+    spotsPercent,
+    formatAttendees,
+
+    // data shape maps (same source as API responses in production)
     CATEGORY_MAP,
-    ALL_EVENTS_CONFIG,
   };
 };
 

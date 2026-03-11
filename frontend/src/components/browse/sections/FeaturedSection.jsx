@@ -1,7 +1,7 @@
 // frontend/src/components/browse/sections/FeaturedSection.jsx
 import React, { useState } from "react";
 import { Star } from "lucide-react";
-import { useBrowse } from "@/hooks/useBrowse";
+import { useBrowse } from "@/hooks";
 import BrowseEventCard from "@/components/browse/cards/BrowseEventCard";
 import SectionShell from "./SectionShell";
 

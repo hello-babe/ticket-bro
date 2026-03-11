@@ -2,7 +2,7 @@
 import React from "react";
 import Container from "@/components/layout/Container";
 import { BookOpen } from "lucide-react";
-import { useBrowse } from "@/hooks/useBrowse";
+import { useBrowse } from "@/hooks";
 
 const DEFAULT_GUIDES = [
   { id: 1, title: "How to Find the Best Events Near You", description: "Use location filters and the map view to discover events in your neighbourhood." },

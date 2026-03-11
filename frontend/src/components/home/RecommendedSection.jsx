@@ -1,9 +1,2 @@
-import React from 'react'
-
-const RecommendedSection = () => {
-  return (
-    <div>RecommendedSection</div>
-  )
-}
-
-export default RecommendedSection
+// Re-export browse RecommendedSection for use on the home page
+export { default } from "@/components/browse/sections/RecommendedSection";

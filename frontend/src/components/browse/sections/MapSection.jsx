@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Navigation, Star, BadgeCheck, Ticket } from "lucide-react";
 import Container from "@/components/layout/Container";
-import { useBrowse } from "@/hooks/useBrowse";
+import { useBrowse } from "@/hooks";
 
 // Map placeholder — in production replace with react-leaflet or Google Maps
 const MapPlaceholder = ({ locationLabel, eventCount }) => (
