@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Mail, Check, Loader2, Bell, Tag, Calendar, MapPin } from "lucide-react";
 import { useParams } from "react-router-dom";
 import Container from "@/components/layout/Container";
-import { useBrowse, unslugify } from "@/hooks/useBrowse";
+import { useBrowse, unslugify } from "@/hooks";
 
 const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 

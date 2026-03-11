@@ -1,7 +1,7 @@
 // frontend/src/components/browse/sections/NewArrivalsSection.jsx
 import React, { useState } from "react";
 import { Sparkles } from "lucide-react";
-import { useBrowse } from "@/hooks/useBrowse";
+import { useBrowse } from "@/hooks";
 import BrowseEventCard from "@/components/browse/cards/BrowseEventCard";
 import SectionShell from "./SectionShell";
 

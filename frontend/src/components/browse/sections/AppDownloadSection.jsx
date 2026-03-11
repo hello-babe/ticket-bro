@@ -2,7 +2,7 @@
 import React from "react";
 import { Smartphone, Star, Bell, Ticket, MapPin } from "lucide-react";
 import Container from "@/components/layout/Container";
-import { useBrowse } from "@/hooks/useBrowse";
+import { useBrowse } from "@/hooks";
 
 const AppDownloadSection = () => {
   const { locationLabel, locationFlag } = useBrowse();

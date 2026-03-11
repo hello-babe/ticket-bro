@@ -1,7 +1,7 @@
 // frontend/src/components/browse/sections/ReviewsSection.jsx
 import React, { useState } from "react";
 import { Star, BadgeCheck, ThumbsUp, Quote, ChevronLeft, ChevronRight } from "lucide-react";
-import { useBrowse } from "@/hooks/useBrowse";
+import { useBrowse } from "@/hooks";
 import SectionShell from "./SectionShell";
 
 const timeAgo = (iso) => {

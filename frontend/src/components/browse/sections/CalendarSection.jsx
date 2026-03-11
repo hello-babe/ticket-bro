@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Calendar, MapPin, Clock, Star, BadgeCheck } from "lucide-react";
 import Container from "@/components/layout/Container";
-import { useBrowse } from "@/hooks/useBrowse";
+import { useBrowse } from "@/hooks";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];

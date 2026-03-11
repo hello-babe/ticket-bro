@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Calendar, Users, Ticket, Star, MapPin, TrendingUp, BadgeCheck } from "lucide-react";
 import Container from "@/components/layout/Container";
-import { useBrowse } from "@/hooks/useBrowse";
+import { useBrowse } from "@/hooks";
 
 const useCountUp = (target, duration = 1200) => {
   const [val, setVal] = useState(0);

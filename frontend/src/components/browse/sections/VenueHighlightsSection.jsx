@@ -2,7 +2,7 @@
 import React from "react";
 import Container from "@/components/layout/Container";
 import { Building2, MapPin, Users } from "lucide-react";
-import { useBrowse } from "@/hooks/useBrowse";
+import { useBrowse } from "@/hooks";
 
 const DEFAULT_VENUES = [
   { id: 1, name: "Bangabandhu National Stadium",  location: "Motijheel, Dhaka",     capacity: 36000, type: "Stadium" },
