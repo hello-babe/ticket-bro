@@ -1,7 +1,7 @@
 'use strict';
 
 const User = require('../../modules/users/user.model');
-const RefreshToken = require('../../infrastructure/tokens/RefreshToken');
+const RefreshToken = require('../../infrastructure/tokens/tokens');
 const authConfig = require('../../config/auth.config');
 
 class AuthRepository {

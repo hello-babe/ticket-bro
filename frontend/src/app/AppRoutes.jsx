@@ -116,11 +116,13 @@ export const ROUTES = {
 
   BROWSE: {
     ROOT:        '/browse',
-    CATEGORY:    cat              => `/browse/${cat}`,
-    SUBCATEGORY: (cat, sub)       => `/browse/${cat}/${sub}`,
-    EVENT_TYPE:  (cat, sub, type) => `/browse/${cat}/${sub}/${type}`,
+    CATEGORY:    cat              => `/${cat}`,
+    SUBCATEGORY: (cat, sub)       => `/${cat}/${sub}`,
+    EVENT_TYPE:  (cat, sub, type) => `/${cat}/${sub}/${type}`,
+    EVENT:       (cat, sub, type, slug) => `/${cat}/${sub}/${type}/${slug}`,
   },
 
+  // Legacy — use BROWSE.EVENT when category context is available
   EVENT: slug => `/events/${slug}`,
   SEARCH: { ROOT: '/search', RESULTS: '/search/results' },
   CART:   { ROOT: '/cart',   CHECKOUT: '/cart/checkout' },
@@ -253,13 +255,16 @@ const AppRoutes = () => (
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
 
-        <Route path="/browse">
-          <Route index element={<BrowsePage />} />
-          <Route path=":categorySlug" element={<CategoryPage />} />
-          <Route path=":categorySlug/:subCategorySlug" element={<SubCategoryPage />} />
-          <Route path=":categorySlug/:subCategorySlug/:eventTypeSlug" element={<EventTypePage />} />
-        </Route>
+        {/* All Events page — only route that uses /browse */}
+        <Route path="/browse" element={<BrowsePage />} />
 
+        {/* Category → SubCategory → EventType → EventDetails (no /browse/ prefix) */}
+        <Route path="/:categorySlug" element={<CategoryPage />} />
+        <Route path="/:categorySlug/:subCategorySlug" element={<SubCategoryPage />} />
+        <Route path="/:categorySlug/:subCategorySlug/:eventTypeSlug" element={<EventTypePage />} />
+        <Route path="/:categorySlug/:subCategorySlug/:eventTypeSlug/:eventSlug" element={<EventDetailsPage />} />
+
+        {/* Legacy /events/:slug — keeps old links working */}
         <Route path="/events/:eventSlug" element={<EventDetailsPage />} />
 
         <Route path="/search">

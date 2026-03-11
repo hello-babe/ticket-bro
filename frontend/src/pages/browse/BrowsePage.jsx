@@ -1,28 +1,35 @@
-import { CalendarSection, CategoryNavSection, EditorsPicksSection, EventGridSection, FeaturedSection, FiltersSection, HeroSection, MapSection, NearbySection, NewArrivalsSection, NewsletterSection, RecommendedSection, ReviewsSection, StatsSection, TopRatedSection, TrendingSection, UpcomingSection } from '@/components/browse/sections'
-import React from 'react'
+// frontend/src/pages/browse/BrowsePage.jsx
+// Route: /browse — All Events page
+import React from "react";
+import {
+  HeroSection, CategoryNavSection, FiltersSection, EventGridSection,
+  FeaturedSection, TrendingSection, NewArrivalsSection, UpcomingSection,
+  TopRatedSection, EditorsPicksSection, NearbySection, MapSection,
+  CalendarSection, RecommendedSection, ReviewsSection, StatsSection,
+  NewsletterSection, AppDownloadSection,
+} from "@/components/browse/sections";
 
-const BrowsePage = () => {
-  return (
-    <>
-      <HeroSection />
-      <CategoryNavSection />
-      <FiltersSection />
-      <EventGridSection />
-      <FeaturedSection />
-      <TrendingSection />
-      <NewArrivalsSection />
-      <UpcomingSection />
-      <TopRatedSection />
-      <EditorsPicksSection />
-      <NearbySection />
-      <MapSection/>
-      <CalendarSection/>
-      <RecommendedSection/>
-      <ReviewsSection/>
-      <StatsSection/>
-      <NewsletterSection/>
-    </>
-  );
-}
+const BrowsePage = () => (
+  <>
+    <HeroSection />
+    <CategoryNavSection />
+    <FiltersSection />
+    <EventGridSection />
+    <FeaturedSection />
+    <TrendingSection />
+    <NewArrivalsSection />
+    <UpcomingSection />
+    <TopRatedSection />
+    <EditorsPicksSection />
+    <NearbySection />
+    <MapSection />
+    <CalendarSection />
+    <RecommendedSection />
+    <ReviewsSection />
+    <StatsSection />
+    <AppDownloadSection />
+    <NewsletterSection />
+  </>
+);
 
-export default BrowsePage
+export default BrowsePage;

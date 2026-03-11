@@ -1,6 +1,6 @@
 // frontend/src/pages/event/EventDetailsPage.jsx
 //
-// Route: /browse/:eventSlug
+// Route: /:categorySlug/:subCategorySlug/:eventTypeSlug/:eventSlug
 // Displays full details for a single event.
 //
 // Sections (top → bottom):
@@ -31,7 +31,8 @@ import {
   Heart, Flag, ZoomIn,
 } from "lucide-react";
 import Container from "@/components/layout/Container";
-import { useLocation } from "@/context/LocationContext";
+import { useLocation as useLocationCtx } from "@/context/LocationContext";
+import Breadcrumb from "@/components/shared/Breadcrumb";
 
 /* ═══════════════════════════════════════════════════════════════
    MOCK EVENT DATA
@@ -165,43 +166,6 @@ const StarRow = ({ rating, size = 12 }) => (
       <Star key={i} size={size} className={rating >= i ? "text-foreground fill-foreground" : "text-border"} />
     ))}
   </span>
-);
-
-/* ═══════════════════════════════════════════════════════════════
-   1. BREADCRUMB
-═══════════════════════════════════════════════════════════════ */
-const Breadcrumb = ({ event }) => (
-  <div className="w-full bg-background">
-    <Container>
-      <div className="flex items-center gap-1.5 py-4 flex-wrap">
-        {[
-          { label: "Home",                 to: "/" },
-          { label: "Browse",               to: "/browse" },
-          { label: event.category,         to: `/browse/${event.categorySlug}` },
-          { label: event.subCategory,      to: `/browse/${event.categorySlug}/${event.subCategorySlug}` },
-          { label: event.eventType,        to: `/browse/${event.categorySlug}/${event.subCategorySlug}/${event.eventTypeSlug}` },
-          { label: event.title,            to: null },
-        ].map((crumb, i, arr) => (
-          <React.Fragment key={i}>
-            {crumb.to ? (
-              <Link
-                to={crumb.to}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors truncate max-w-[120px]"
-                style={{ fontFamily: "var(--font-sans)" }}
-              >
-                {crumb.label}
-              </Link>
-            ) : (
-              <span className="text-xs font-medium text-foreground truncate max-w-[200px]" style={{ fontFamily: "var(--font-sans)" }}>
-                {crumb.label}
-              </span>
-            )}
-            {i < arr.length - 1 && <ChevronRight size={11} className="text-muted-foreground shrink-0" />}
-          </React.Fragment>
-        ))}
-      </div>
-    </Container>
-  </div>
 );
 
 /* ═══════════════════════════════════════════════════════════════
@@ -339,7 +303,7 @@ const Hero = ({ event, saved, onSave, onShare }) => {
             </div>
 
             {/* Organiser preview */}
-            <Link to={`/organiser/${event.organizer.slug}`} className="flex items-center gap-3 group">
+            <Link to={`/organizer/${event.organizer.slug}`} className="flex items-center gap-3 group">
               <span
                 className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                 style={{ background: "var(--foreground)", color: "var(--background)", fontFamily: "var(--font-heading)" }}
@@ -763,7 +727,7 @@ const Organiser = ({ org }) => (
             </a>
           )}
           <Link
-            to={`/organiser/${org.slug}`}
+            to={`/organizer/${org.slug}`}
             className="ml-auto text-xs font-semibold text-foreground hover:underline flex items-center gap-1"
             style={{ fontFamily: "var(--font-sans)" }}
           >
@@ -876,7 +840,7 @@ const RelatedEvents = ({ events, categorySlug, subCategorySlug, eventTypeSlug })
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-bold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>You Might Also Like</h2>
           <Link
-            to={`/browse/${categorySlug}/${subCategorySlug}/${eventTypeSlug}`}
+            to={`/${categorySlug}/${subCategorySlug}/${eventTypeSlug}`}
             className="flex items-center gap-1 text-xs font-semibold text-foreground hover:underline"
             style={{ fontFamily: "var(--font-sans)" }}
           >
@@ -885,7 +849,7 @@ const RelatedEvents = ({ events, categorySlug, subCategorySlug, eventTypeSlug })
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {events.map((e) => (
-            <Link key={e.id} to={`/events/${e.slug}`}
+            <Link key={e.id} to={`/${categorySlug}/${subCategorySlug}/${eventTypeSlug}/${e.slug}`}
               className="group flex flex-col rounded-lg border border-border bg-card overflow-hidden hover:border-foreground/20 hover:shadow-md transition-all"
             >
               <div className="h-36 overflow-hidden bg-muted shrink-0">
@@ -922,7 +886,7 @@ const RelatedEvents = ({ events, categorySlug, subCategorySlug, eventTypeSlug })
    EVENT DETAILS PAGE
 ═══════════════════════════════════════════════════════════════ */
 const EventDetailsPage = () => {
-  const { eventSlug } = useParams();
+  const { categorySlug, subCategorySlug, eventTypeSlug, eventSlug } = useParams();
   const [saved,  setSaved]  = useState(false);
   const [shared, setShared] = useState(false);
   const ticketsRef = useRef(null);
@@ -954,7 +918,13 @@ const EventDetailsPage = () => {
     <div className="min-h-screen bg-background" style={{ paddingBottom: 80 }}>
 
       {/* Breadcrumb */}
-      <Breadcrumb event={event} />
+      <div className="w-full bg-background">
+        <Container>
+          <div className="py-4">
+            <Breadcrumb />
+          </div>
+        </Container>
+      </div>
 
       {/* Hero */}
       <Hero
