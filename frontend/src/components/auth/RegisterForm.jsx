@@ -26,7 +26,59 @@ import {
 import { registerSchema, getPasswordStrength } from "@/utils/validators";
 import authConfig from "@/config/auth.config";
 import SocialLogin from "./SocialLogin";
-import { InputField, Button, Divider } from "@/components/shared/common";
+import { Divider } from "@/components/shared/common";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+
+// Local field wrapper — label + left/right icon slots + error message
+const Field = ({ id, label, error, left, right, className, ...props }) => (
+  <div className="flex flex-col gap-1 w-full">
+    {label && (
+      <Label
+        htmlFor={id}
+        className="text-[0.75rem] font-medium cursor-pointer select-none"
+      >
+        {label}
+      </Label>
+    )}
+    <div
+      className={cn(
+        "flex items-center gap-2 px-3 h-10 rounded-lg border transition-colors duration-150 cursor-text focus-within:ring-2 focus-within:ring-ring/30",
+        error
+          ? "border-destructive bg-destructive/5"
+          : "border-input bg-card hover:border-ring/60",
+      )}
+      onClick={() => document.getElementById(id)?.focus()}
+    >
+      {left && (
+        <span className="flex-shrink-0 text-muted-foreground leading-none">
+          {left}
+        </span>
+      )}
+      <input
+        id={id}
+        className={cn(
+          "flex-1 min-w-0 w-full bg-transparent outline-none border-none text-[0.875rem] text-foreground placeholder:text-muted-foreground/50",
+          "[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_hsl(var(--card))] [&:-webkit-autofill]:[-webkit-text-fill-color:hsl(var(--foreground))]",
+          "[&:-webkit-autofill:focus]:shadow-[inset_0_0_0_1000px_hsl(var(--card))] [&:-webkit-autofill]:transition-[background-color_9999s_ease]",
+          className,
+        )}
+        {...props}
+      />
+      {right && (
+        <span className="flex-shrink-0 text-muted-foreground leading-none">
+          {right}
+        </span>
+      )}
+    </div>
+    {error && (
+      <p className="text-[0.7rem] text-destructive leading-none mt-0.5">
+        {error}
+      </p>
+    )}
+  </div>
+);
 
 // Password requirement dot
 const Req = ({ met, label }) => (
@@ -109,7 +161,7 @@ const RegisterForm = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
         {/* Name fields */}
         <div className="grid grid-cols-2 gap-2.5">
-          <InputField
+          <Field
             id="firstName"
             label="First name"
             error={errors.firstName?.message}
@@ -117,7 +169,7 @@ const RegisterForm = () => {
             placeholder="John"
             {...register("firstName")}
           />
-          <InputField
+          <Field
             id="lastName"
             label="Last name"
             error={errors.lastName?.message}
@@ -127,7 +179,7 @@ const RegisterForm = () => {
           />
         </div>
 
-        <InputField
+        <Field
           id="email"
           label="Email address"
           error={errors.email?.message}
@@ -137,7 +189,7 @@ const RegisterForm = () => {
           {...register("email")}
         />
 
-        <InputField
+        <Field
           id="phone"
           label={
             <span>
@@ -154,7 +206,7 @@ const RegisterForm = () => {
 
         {/* Password + strength meter */}
         <div className="flex flex-col gap-0">
-          <InputField
+          <Field
             id="password"
             label="Password"
             error={errors.password?.message}
@@ -204,7 +256,7 @@ const RegisterForm = () => {
           )}
         </div>
 
-        <InputField
+        <Field
           id="confirmPassword"
           label="Confirm password"
           error={errors.confirmPassword?.message}
@@ -228,9 +280,17 @@ const RegisterForm = () => {
           {...register("confirmPassword")}
         />
 
-        <Button type="submit" isLoading={isLoading}>
-          <span>Create account</span>
-          <ArrowRight size={14} />
+        <Button type="submit" className="w-full mt-1" disabled={isLoading}>
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              Creating account…
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              Create account <ArrowRight size={14} />
+            </span>
+          )}
         </Button>
       </form>
 
