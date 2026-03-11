@@ -159,30 +159,6 @@ const HeroSection = () => {
     <section className="bg-background pt-4">
       <Container>
         <div className="relative h-[350px] sm:h-[420px] md:h-[520px] overflow-hidden rounded-sm group/banner">
-
-          {/* ── TOP-LEFT BADGES ──────────────────────────────────────── */}
-          <div className="absolute top-4 left-4 z-30 flex gap-2 flex-wrap pointer-events-auto">
-            <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-black/60 backdrop-blur-md text-white/90 border border-white/20 rounded-sm flex items-center gap-1.5">
-              <span>{locationFlag}</span>
-              <span>{locationLabel}</span>
-            </span>
-            <span className="px-3 py-1 text-[10px] font-black uppercase tracking-wider bg-black/60 backdrop-blur-md text-white/90 border border-white/20 rounded-sm">
-              {current.category?.name || config.label}
-            </span>
-            <span className="px-3 py-1 text-[10px] font-black uppercase tracking-wider bg-primary/90 backdrop-blur-md text-white rounded-sm">
-              {formatPrice(current)}
-            </span>
-          </div>
-
-          {/* ── TOP-RIGHT STATUS ─────────────────────────────────────── */}
-          <div className="absolute top-4 right-4 z-30 pointer-events-auto">
-            <AnimatePresence mode="wait">
-              <motion.div key={`badge-${current._id}-${index}`} variants={badgeVariants} initial="initial" animate="animate" exit="exit">
-                <StatusChip event={current} />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
           {/* ── IMAGE CAROUSEL ───────────────────────────────────────── */}
           <div className="absolute inset-0 z-0 touch-none">
             <AnimatePresence mode="wait">
@@ -225,10 +201,34 @@ const HeroSection = () => {
           )}
 
           {/* ── CONTENT OVERLAY ──────────────────────────────────────── */}
-          <div className="relative z-10 h-full flex flex-col p-6 sm:p-10 md:p-12 pointer-events-none">
+          <div className="relative z-10 h-full flex flex-col pt-4 sm:pt-6 md:pt-8 px-6 sm:px-10 md:px-12 pb-6 sm:pb-10 md:pb-12 pointer-events-none">
+            {/* ── TOP ROW (STATUS + BADGES) ───────────────────────────── */}
+            <div className="flex items-start justify-between w-full pointer-events-auto">
+              {/* LEFT: Status */}
+              <div className="flex items-center gap-3">
+                <span className="h-[2px] w-8 bg-primary" />
+                <StatusChip event={current} />
+              </div>
 
-            {/* Title + description block */}
-            <div className="flex-1 flex items-end pb-2">
+              {/* RIGHT: Badges */}
+              <div className="flex gap-2 flex-wrap justify-end max-w-[55%]">
+                <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-black/60 backdrop-blur-md text-white/90 border border-white/20 rounded-sm flex items-center gap-1.5">
+                  <span>{locationFlag}</span>
+                  <span>{locationLabel}</span>
+                </span>
+
+                <span className="px-3 py-1 text-[10px] font-black uppercase tracking-wider bg-black/60 backdrop-blur-md text-white/90 border border-white/20 rounded-sm">
+                  {current.category?.name || config.label}
+                </span>
+
+                <span className="px-3 py-1 text-[10px] font-black uppercase tracking-wider bg-primary/90 backdrop-blur-md text-white rounded-sm">
+                  {formatPrice(current)}
+                </span>
+              </div>
+            </div>
+
+            {/* ── TITLE BLOCK ─────────────────────────────────────────── */}
+            <div className="mt-6 sm:mt-8 max-w-3xl flex-1">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={`content-${current._id}-${index}`}
@@ -236,13 +236,7 @@ const HeroSection = () => {
                   initial="initial"
                   animate="animate"
                   exit="exit"
-                  className="max-w-3xl"
                 >
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="h-[2px] w-8 bg-primary" />
-                    <StatusChip event={current} />
-                  </div>
-
                   <h1 className="font-heading text-3xl sm:text-5xl md:text-6xl font-bold uppercase tracking-tighter text-white leading-[0.92] line-clamp-3">
                     {current.title}
                   </h1>
@@ -259,7 +253,7 @@ const HeroSection = () => {
                         {[...Array(5)].map((_, i) => (
                           <Star key={i} size={13}
                             className={i < Math.floor(current.averageRating)
-                              ? "text-yellow-400 fill-yellow-400"
+                                ? "text-yellow-400 fill-yellow-400"
                               : "text-white/30"} />
                         ))}
                       </div>

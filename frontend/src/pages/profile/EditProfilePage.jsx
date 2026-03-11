@@ -77,7 +77,7 @@ const inputCls =
 
 // ── Section ───────────────────────────────────────────────────────────────────
 const Section = ({ title, subtitle, children }) => (
-  <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+  <div className="bg-card rounded-2xl p-5 space-y-4">
     <div className="pb-3 border-b border-border">
       <h2 className="text-sm font-bold text-foreground font-heading">
         {title}
@@ -166,7 +166,7 @@ const EditProfilePage = () => {
       <div className="flex items-center gap-3 mb-2">
         <button
           onClick={() => navigate(ROUTES.PROFILE.ROOT)}
-          className="w-9 h-9 rounded-xl border border-border bg-card flex items-center justify-center hover:border-primary/40 hover:bg-primary/5 transition-colors cursor-pointer"
+          className="w-9 h-9 rounded-xl bg-card flex items-center justify-center hover:bg-accent transition-colors cursor-pointer"
         >
           <ArrowLeft size={16} className="text-foreground" />
         </button>
@@ -324,7 +324,7 @@ const EditProfilePage = () => {
             type="button"
             onClick={() => navigate(ROUTES.PROFILE.ROOT)}
             className="flex-1 h-11 rounded-xl border border-border bg-card text-sm font-semibold text-foreground
-              hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer font-heading"
+              hover:border-accent hover:bg-accent transition-all cursor-pointer font-heading"
           >
             Cancel
           </button>

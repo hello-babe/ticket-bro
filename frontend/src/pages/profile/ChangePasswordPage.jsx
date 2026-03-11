@@ -49,7 +49,7 @@ const PwField = ({ label, name, error, register: reg, show, onToggle }) => (
     </label>
     <div
       className={`flex items-center gap-2.5 px-3 h-[46px] rounded-xl border bg-card
-      transition-colors focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20
+      focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20
       ${error ? "border-destructive" : "border-input"}`}
     >
       <Lock size={14} className="text-muted-foreground shrink-0" />
@@ -65,7 +65,7 @@ const PwField = ({ label, name, error, register: reg, show, onToggle }) => (
       <button
         type="button"
         onClick={onToggle}
-        className="shrink-0 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        className="shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
       >
         {show ? <EyeOff size={14} /> : <Eye size={14} />}
       </button>
@@ -84,7 +84,7 @@ const Req = ({ met, label }) => (
       {met && <Check size={9} className="text-black" strokeWidth={3} />}
     </div>
     <span
-      className={`text-xs transition-colors ${met ? "text-foreground font-medium" : "text-muted-foreground"}`}
+      className={`text-xs ${met ? "text-foreground font-medium" : "text-muted-foreground"}`}
     >
       {label}
     </span>
@@ -157,7 +157,7 @@ const ChangePasswordPage = () => {
   if (done) {
     return (
       <div className="max-w-md mx-auto px-4 py-6 font-sans">
-        <div className="bg-card border border-border rounded-2xl p-10 text-center space-y-4">
+        <div className="bg-card rounded-2xl p-10 text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
             <CheckCircle2 size={30} className="text-emerald-500" />
           </div>
@@ -180,13 +180,13 @@ const ChangePasswordPage = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto px-4 py-6 space-y-4 font-sans">
+    <div className="min-h-screen max-w-md mx-auto px-4 py-6 space-y-4 font-sans">
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate(ROUTES.PROFILE.ROOT)}
-          className="w-9 h-9 rounded-xl border border-border bg-card flex items-center justify-center
-            hover:border-primary/40 hover:bg-primary/5 transition-colors cursor-pointer"
+          className="w-9 h-9 rounded-xl bg-card flex items-center justify-center
+            hover:bg-accent cursor-pointer"
         >
           <ArrowLeft size={16} className="text-foreground" />
         </button>
@@ -200,7 +200,7 @@ const ChangePasswordPage = () => {
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+      <div className="bg-card rounded-2xl p-5 space-y-4">
         {/* Security notice */}
         <div className="flex items-start gap-3 px-3.5 py-3 rounded-xl bg-primary/6 border border-primary/20">
           <ShieldCheck size={15} className="text-primary shrink-0 mt-0.5" />
@@ -259,7 +259,7 @@ const ChangePasswordPage = () => {
               type="button"
               onClick={() => navigate(ROUTES.PROFILE.ROOT)}
               className="flex-1 h-11 rounded-xl border border-border bg-transparent text-sm font-semibold
-                text-foreground hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer font-heading"
+                text-foreground hover:border-accent hover:bg-accent transition-all cursor-pointer font-heading"
             >
               Cancel
             </button>
