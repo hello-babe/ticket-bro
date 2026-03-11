@@ -1,5 +1,5 @@
 import React from "react";
-import { SubcategoryCard } from "../cards";
+import { SubcategoryCard } from "../../shared/cards";
 
 const SubcategoryNavSection = ({ subcategories }) => (
   <div className="flex flex-wrap gap-4 mb-6">
