@@ -1,11 +1,3 @@
-import React from 'react'
-
-const ChatPage = () => {
-  return (
-    <div>
-      
-    </div>
-  )
-}
-
-export default ChatPage
+// pages/messaging/ChatPage.jsx
+// Alias to ConversationPage with a floating-style layout for in-app chat widget
+export { default } from './ConversationPage';
